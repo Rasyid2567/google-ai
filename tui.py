@@ -391,7 +391,11 @@ class GoogleAITUI(App[None]):
         self.query_one("#recheck", Button).disabled = locked or self.sequence
         self.query_one("#offers_toggle", Button).display = self._check_listed and not review and not self.advanced_visible
         self.query_one("#offers_toggle", Button).disabled = locked or self.sequence
-        self.query_one("#advanced_toggle", Button).disabled = locked or self.sequence
+        advanced_action = self.query_one("#advanced_toggle", Button)
+        # Once checkout review starts (or a stage is running), the Advanced action
+        # cannot be used. Do not let its disabled button squeeze Next / Finish.
+        advanced_action.display = not (review or self.busy)
+        advanced_action.disabled = locked or self.sequence
         self.query_one("#diagnose", Button).disabled = locked or self.sequence
         for selector in ("#run", "#sequence", "#run_all", "#mode"):
             self.query_one(selector).disabled = locked or self.sequence
