@@ -264,7 +264,16 @@ class ResponsiveScreenTests(unittest.IsolatedAsyncioTestCase):
                         await pilot.pause()
                         self.assertIsInstance(app.screen, Approval)
                         await pilot.click("#cancel")
+                        for _ in range(20):
+                            if not isinstance(app.screen, Approval):
+                                break
+                            await pilot.pause(0.05)
+                        self.assertNotIsInstance(app.screen, Approval)
                         await pilot.click("#advanced_toggle")
+                        for _ in range(20):
+                            if not app.advanced_visible:
+                                break
+                            await pilot.pause(0.05)
                         self.assertFalse(app.advanced_visible)
                     stage.assert_not_called()
 
@@ -313,6 +322,10 @@ class ResponsiveScreenTests(unittest.IsolatedAsyncioTestCase):
                             screenshot = unescape(app.export_screenshot()).replace("\xa0", " ")
                             self.assertIn(str(button.label), screenshot, selector)
                         await pilot.click("#next")
+                        for _ in range(20):
+                            if isinstance(app.screen, Approval):
+                                break
+                            await pilot.pause(0.05)
                         self.assertIsInstance(app.screen, Approval)
                         await pilot.click("#cancel")
                         for _ in range(20):
@@ -321,7 +334,10 @@ class ResponsiveScreenTests(unittest.IsolatedAsyncioTestCase):
                             await pilot.pause(0.05)
                         self.assertNotIsInstance(app.screen, Approval)
                         await pilot.click("#finish")
-                        await pilot.pause()
+                        for _ in range(20):
+                            if not app.sequence:
+                                break
+                            await pilot.pause(0.05)
                         self.assertFalse(app.sequence)
                         self.assertTrue(app.query_one("#quickstart").display)
                     self.assertEqual(stage.call_count, 2, "Only mocked stages 1 and 2 run")
