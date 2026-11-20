@@ -15,6 +15,12 @@
 
 The sidebar lists the six stages. Android Device / Google Account cards update from observed output; account identifiers are masked. Original-author and maintainer credits link to their GitHub profiles in supported terminals.
 
+### Application updates
+
+The dashboard checks for a newer revision of the official `main` branch in the background at startup. **Check for updates** retries the check; when a newer revision is available, **Update & Restart** installs the displayed revision and reopens the native launcher at an idle dashboard. Versions are shown as short Git commit IDs. No stage or checkout is resumed.
+
+Automatic updates require an official Git clone on `main`, no local changes or unfinished Git operations, and a fast-forward history. Development branches, forks and source ZIPs must be updated manually; keep ZIP installations in separate folders. Network/Git failures appear in the update status and can be retried. Updating is locked during a stage, connection diagnosis, payment approval or guided Google Play review. While installation runs, new stages and Exit are locked; Help and technical details remain available. The updater never resets or stashes local files.
+
 ### Advanced run modes
 
 | Mode | Behavior |

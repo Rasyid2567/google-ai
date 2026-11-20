@@ -1,6 +1,9 @@
 # ePlus AI Toolkit — 简体中文
 
-<!-- Source README.md git-blob: 52a6b829e68d1c83f2ffba023a0d43364ea8b6eb -->
+[![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?logo=telegram&logoColor=white)](https://t.me/eplus_news)
+[![X](https://img.shields.io/badge/X-%23000000.svg?logo=X&logoColor=white)](https://x.com/david_nguyen94)
+
+<!-- Source README.md git-blob: 1b9806659ae3b249b513bc1997df022c464a3a99 -->
 
 [English](README.md) · [Tiếng Việt](README.vi.md) · **简体中文** · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md)
 
@@ -154,6 +157,12 @@ sh run-macos.sh
 TUI 中**每个结账步骤均需单独批准**。当工具提示已尝试提交结账时，请到 [Google Play Subscriptions](https://play.google.com/store/account/subscriptions) 亲自确认实际套餐、收费与续订日期。只有确认订阅确实改变后才能选择 **Verified in Google Play → Next**；工具本身**无法独立证明激活成功**。
 
 **停止与退出：**Step 0–1 的 Stop 会请求终止本地检查。Step 2–5 的 **Stop after this step** 只阻止后续步骤，**不会强制中断正在进行的支付**。**Q / Exit** 在结账期间会等当前步骤结束；**D** 切换技术日志，**R** 执行当前选择。
+
+### 更新应用
+
+每次打开控制面板时，工具都会在后台检查官方 `main` 分支是否有更新。点击 **Check for updates** 可重新检查；发现新版后，点击 **Update & Restart**，即可安装界面显示的版本，并通过当前操作系统的启动脚本重新打开空闲的控制面板。版本以 Git 提交的短标识显示，任何步骤或付款操作都不会自动继续。
+
+自动更新仅适用于官方 Git 克隆，且必须位于 `main` 分支、没有本地改动或未完成的 Git 操作，并且可以快进到新版。开发分支、派生项目和源码 ZIP 需手动更新；ZIP 应放在单独的文件夹中。网络或 Git 错误会显示在更新区域，可重试检查。运行步骤、诊断连接、确认付款或在引导流程中等待核对 Google Play 时，更新按钮会被锁定。安装期间无法启动新步骤或使用 Exit，但仍可查看帮助和技术信息。更新器不会使用 reset 或 stash 处理本地文件。
 
 ## 4. PowerShell 命令行操作（高级）
 

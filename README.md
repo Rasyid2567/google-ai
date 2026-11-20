@@ -1,5 +1,8 @@
 # ePlus AI Toolkit
 
+[![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?logo=telegram&logoColor=white)](https://t.me/eplus_news)
+[![X](https://img.shields.io/badge/X-%23000000.svg?logo=X&logoColor=white)](https://x.com/david_nguyen94)
+
 **Languages:** **English** · [Tiếng Việt](README.vi.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md)
 
 A terminal toolkit for **Windows and macOS** to inspect Google AI Pro offers through Android, ADB, Frida and Google Play. The shared Textual dashboard uses a PowerShell/Python launcher on Windows and a native Python adapter on macOS.
@@ -135,6 +138,12 @@ The dashboard includes two **inspection-first** actions, adapted from the upstre
 **Important distinction:** Step 1 does not initiate a purchase, but underlying environment preflight can still install or repair ADB/Frida and change emulator/network settings. **Step 0 — Environment** is a setup/diagnostics stage, not a purchase-free guarantee of zero local side effects.
 
 The sidebar lists the six stages. Android Device / Google Account cards update from observed output; account identifiers are masked. Original-author and maintainer credits link to their GitHub profiles in supported terminals.
+
+### Application updates
+
+The dashboard checks for a newer revision of the official `main` branch in the background at startup. **Check for updates** retries the check; when a newer revision is available, **Update & Restart** installs the displayed revision and reopens the native launcher at an idle dashboard. Versions are shown as short Git commit IDs. No stage or checkout is resumed.
+
+Automatic updates require an official Git clone on `main`, no local changes or unfinished Git operations, and a fast-forward history. Development branches, forks and source ZIPs must be updated manually; keep ZIP installations in separate folders. Network/Git failures appear in the update status and can be retried. Updating is locked during a stage, connection diagnosis, payment approval or guided Google Play review. While installation runs, new stages and Exit are locked; Help and technical details remain available. The updater never resets or stashes local files.
 
 ### Advanced run modes
 

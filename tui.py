@@ -27,6 +27,7 @@ from tui_core import STAGES, Outcome, command_for_step, mask_email, \
     needs_setup, offer_explorer_lines, outcome_for_stage, read_fresh_report, \
     report_summary, validate_step
 from device_diagnostics import ConnectionDiagnosis, inspect_connection
+from app_update import UpdateError, UpdateInfo, check_for_update, install_update, restart_command
 
 
 class Approval(ModalScreen[bool]):
@@ -91,6 +92,9 @@ class GoogleAITUI(App[None]):
     #credit Static { width: auto; height: 1; color: #87b8d4; }
     #credit Link { width: auto; height: 1; color: #75d8ff; text-style: underline; }
     #credit Link:hover { color: #e6f8ff; }
+    #update_bar { height: 3; background: #12263d; }
+    #update_status { width: 1fr; height: 1; margin: 1 1 0 1; color: #91e3ff; }
+    #update { width: 24; height: 3; margin: 0; }
     #details { height: 3; margin-bottom: 1; }
     #device, #account {
         width: 1fr; height: 3; background: #12263d;
@@ -117,7 +121,7 @@ class GoogleAITUI(App[None]):
     #status_panel { min-height: 8; overflow-y: auto; scrollbar-size: 1 1; }
 
     #welcome_panel {
-        height: auto; border: round #2b97bc;
+        height: auto; max-height: 65%; overflow-y: auto; border: round #2b97bc;
         background: #112b49; padding: 1 2; margin-bottom: 1;
     }
     #welcome { color: #91e3ff; text-style: bold; height: 1; }
@@ -164,9 +168,13 @@ class GoogleAITUI(App[None]):
     #hint { color: #83b1cf; height: auto; margin-top: 1; }
     Screen.compact #brand { height: 1; border: none; padding: 0 1; }
     Screen.compact #credit, Screen.compact #hint { display: none; }
-    Screen.compact #details { height: 1; }
+    Screen.compact #update_bar { height: 1; }
+    Screen.compact #update_status { margin: 0 1; }
+    Screen.compact #update { height: 1; min-height: 1; border: none; }
+    Screen.compact #details { height: 1; margin-bottom: 0; }
     Screen.compact #device, Screen.compact #account { height: 1; border: none; }
     Screen.compact #welcome_panel { padding: 0 1; }
+    Screen.compact #quickstart { margin-bottom: 0; }
     Screen.compact #quick_hint, Screen.compact #read_only { display: none; }
     Screen.compact #welcome { display: none; }
     Screen.compact #payment_notice { display: none; }
@@ -185,7 +193,7 @@ class GoogleAITUI(App[None]):
     Screen.tiny #content { layout: vertical; }
     Screen.tiny #controls {
         width: 100%; min-width: 0; height: auto;
-        max-height: 11; overflow-y: auto; margin-bottom: 1;
+        max-height: 3; overflow-y: auto; margin-bottom: 1;
     }
     Screen.tiny #workflow { display: none; }
     Screen.tiny #results { width: 100%; min-width: 0; margin-left: 0; }
@@ -201,6 +209,11 @@ class GoogleAITUI(App[None]):
         self.debug_visible = initial_debug
         self.busy = False
         self._diagnosing = False
+        self._checking_update = False
+        self._updating = False
+        self._approval_pending = False
+        self._update_info: UpdateInfo | None = None
+        self.restart_requested = False
         self.sequence = False
         self.current_step: int | None = None
         self._child: subprocess.Popen[str] | None = None
@@ -230,6 +243,9 @@ class GoogleAITUI(App[None]):
                 yield Static("  |  Maintained ")
                 yield Link("@hoangsvit", url="https://github.com/hoangsvit",
                            tooltip="Maintainer on GitHub", id="maintainer")
+            with Horizontal(id="update_bar"):
+                yield Static("Checking for updates...", id="update_status", markup=False)
+                yield Button("Check for updates", id="update", disabled=True)
             with Horizontal(id="details"):
                 yield Static("ANDROID DEVICE\nMuMu • Auto-detect", id="device")
                 yield Static("GOOGLE ACCOUNT\nNot checked", id="account")
@@ -322,9 +338,10 @@ class GoogleAITUI(App[None]):
 
     @on(Button.Pressed, "#diagnose")
     def diagnose_pressed(self) -> None:
-        if self.busy or self._diagnosing:
+        if self.busy or self._diagnosing or self._updating or self._approval_pending:
             return
         self._diagnosing = True
+        self._refresh_update_controls()
         self.query_one("#diagnose", Button).disabled = True
         self.query_one("#quickstart", Button).disabled = True
         self.query_one("#run", Button).disabled = True
@@ -348,6 +365,7 @@ class GoogleAITUI(App[None]):
 
     def _diagnosis_done(self, diagnosis: ConnectionDiagnosis) -> None:
         self._diagnosing = False
+        self._refresh_update_controls()
         self.query_one("#diagnose", Button).disabled = False
         self.query_one("#quickstart", Button).disabled = False
         self.query_one("#run", Button).disabled = False
@@ -359,6 +377,7 @@ class GoogleAITUI(App[None]):
 
     def on_mount(self) -> None:
         self.set_interval(1, self._refresh_elapsed)
+        self._begin_update_check()
         if self.macos_mode:
             self.query_one("#device", Static).update("ANDROID DEVICE\nADB • Auto-detect")
             self.query_one("#quick_hint", Static).update(
@@ -372,6 +391,75 @@ class GoogleAITUI(App[None]):
         if self.start_sequence:
             self.query_one("#mode", Select).value = "from"
         self._update_run_mode()
+
+    def _refresh_update_controls(self) -> None:
+        button = self.query_one("#update", Button)
+        available = self._update_info is not None and self._update_info.state == "available"
+        button.label = "Update & Restart" if available else "Check for updates"
+        button.disabled = (self.busy or self._diagnosing or self._updating
+                           or self._checking_update or self._approval_pending or self.sequence)
+
+    def _begin_update_check(self) -> None:
+        if self._checking_update or self._updating:
+            return
+        self._checking_update = True
+        self.query_one("#update_status", Static).update("Checking for updates...")
+        self._refresh_update_controls()
+        self.check_app_update()
+
+    @work(thread=True, exclusive=True, group="app-update-check")
+    def check_app_update(self) -> None:
+        info = check_for_update(self.repo)
+        self.call_from_thread(self._update_check_done, info)
+
+    def _update_check_done(self, info: UpdateInfo) -> None:
+        self._checking_update = False
+        self._update_info = info
+        status = self.query_one("#update_status", Static)
+        status.update(info.message)
+        status.tooltip = info.message
+        self._refresh_update_controls()
+
+    @on(Button.Pressed, "#update")
+    def update_pressed(self) -> None:
+        if (self.busy or self._diagnosing or self._updating or self._checking_update
+                or self._approval_pending or self.sequence):
+            return
+        if self._update_info is None or self._update_info.state != "available":
+            self._begin_update_check()
+            return
+        self._updating = True
+        self._refresh_update_controls()
+        for selector in ("#quickstart", "#diagnose", "#run", "#sequence", "#run_all",
+                         "#mode", "#step", "#advanced_toggle", "#exit"):
+            self.query_one(selector).disabled = True
+        self.query_one("#update_status", Static).update("Updating... Please wait.")
+        self._set_message("Installing the displayed version. The dashboard will reopen; no step will resume.")
+        self.apply_app_update(self._update_info)
+
+    @work(thread=True, exclusive=True, group="app-update-install")
+    def apply_app_update(self, info: UpdateInfo) -> None:
+        try:
+            # Ensure a native restart is possible before changing source files.
+            restart_command(self.repo)
+            install_update(self.repo, info)
+        except UpdateError as error:
+            self.call_from_thread(self._app_update_done, str(error))
+        else:
+            self.call_from_thread(self._app_update_done, None)
+
+    def _app_update_done(self, error: str | None) -> None:
+        self._updating = False
+        if error is None:
+            self.restart_requested = True
+            self.exit()
+            return
+        self._update_check_done(UpdateInfo("error", error))
+        for selector in ("#quickstart", "#diagnose", "#run", "#sequence", "#run_all",
+                         "#mode", "#step", "#advanced_toggle", "#exit"):
+            self.query_one(selector).disabled = False
+        self._update_run_mode()
+        self._set_message(error)
 
     @on(Button.Pressed, "#advanced_toggle")
     def advanced_pressed(self) -> None:
@@ -392,7 +480,7 @@ class GoogleAITUI(App[None]):
         self._update_run_mode()
 
     def _update_run_mode(self) -> None:
-        if self.busy:
+        if self.busy or self._diagnosing or self._updating:
             return
         mode = self.query_one("#mode", Select).value
         step = self.query_one("#step", Select).value
@@ -443,7 +531,7 @@ class GoogleAITUI(App[None]):
 
     def _confirm_stage(self, step: int, sequence: bool,
                        previous_verified: bool = False) -> None:
-        if self.busy or self._diagnosing:
+        if self.busy or self._diagnosing or self._updating or self._approval_pending:
             return
         if step == 2:
             title = "Start initial 12-month checkout?"
@@ -474,8 +562,16 @@ class GoogleAITUI(App[None]):
         if previous_verified:
             message = ("Confirm the previous stage ACTUALLY changed the Google Play "
                        "subscription/renewal date. " + message)
-        self.push_screen(Approval(title, message),
-                         lambda approved: self._start(step, sequence) if approved else None)
+        self._approval_pending = True
+        self._refresh_update_controls()
+
+        def confirmed(approved: bool) -> None:
+            self._approval_pending = False
+            self._refresh_update_controls()
+            if approved:
+                self._start(step, sequence)
+
+        self.push_screen(Approval(title, message), confirmed)
 
     @on(Button.Pressed, "#quickstart")
     def quickstart_pressed(self) -> None:
@@ -483,7 +579,7 @@ class GoogleAITUI(App[None]):
 
     @on(Button.Pressed, "#run")
     def selected_pressed(self) -> None:
-        if self.busy or self._diagnosing:
+        if self.busy or self._diagnosing or self._updating or self._approval_pending:
             return
         mode = self.query_one("#mode", Select).value
         if mode == "all":
@@ -507,7 +603,7 @@ class GoogleAITUI(App[None]):
 
     @on(Button.Pressed, "#next")
     def next_pressed(self) -> None:
-        if self.busy or not self.sequence or self.current_step is None:
+        if self.busy or self._updating or not self.sequence or self.current_step is None:
             return
         if self._last_outcome is None or not self._last_outcome.can_review:
             return
@@ -591,7 +687,13 @@ class GoogleAITUI(App[None]):
     def action_run_selected(self) -> None:
         self.selected_pressed()
 
+    def action_quit(self) -> None:
+        self.action_quit_safely()
+
     def action_quit_safely(self) -> None:
+        if self._updating:
+            self._set_message("Updating source files. Please wait for the update to finish before exiting.")
+            return
         if not self.busy:
             self.exit()
             return
@@ -606,10 +708,11 @@ class GoogleAITUI(App[None]):
             self.query_one("#exit", Button).disabled = True
 
     def _start(self, step: int, sequence: bool) -> None:
-        if self.busy or self._diagnosing:
+        if self.busy or self._diagnosing or self._updating or self._approval_pending:
             return
         self.busy = True
         self.sequence = sequence
+        self._refresh_update_controls()
         self.current_step = step
         self._stop_after_step = False
         self._cancel_requested = False
@@ -822,6 +925,7 @@ class GoogleAITUI(App[None]):
             self.query_one("#next", Button).disabled = True
             self.query_one("#next", Button).display = False
             self.sequence = False
+        self._refresh_update_controls()
         if self._exit_after_step:
             self.exit()
             return
@@ -841,8 +945,16 @@ def main(argv: list[str] | None = None) -> int:
         selected = validate_step(args.step)
     except ValueError as exc:
         parser.error(str(exc))
-    GoogleAITUI(repo=Path(__file__).resolve().parent, selected_step=selected,
-                start_sequence=args.sequence, initial_debug=args.debug).run()
+    repo = Path(__file__).resolve().parent
+    app = GoogleAITUI(repo=repo, selected_step=selected,
+                      start_sequence=args.sequence, initial_debug=args.debug)
+    app.run()
+    if app.restart_requested:
+        try:
+            return subprocess.call(restart_command(repo), cwd=repo)
+        except (OSError, UpdateError):
+            print("Update installed. Could not reopen the dashboard; run the native launcher manually.", file=sys.stderr)
+            return 1
     return 0
 
 

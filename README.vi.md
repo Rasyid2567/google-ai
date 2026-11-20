@@ -1,6 +1,9 @@
 # ePlus AI Toolkit — Tiếng Việt
 
-<!-- Source README.md git-blob: 52a6b829e68d1c83f2ffba023a0d43364ea8b6eb -->
+[![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?logo=telegram&logoColor=white)](https://t.me/eplus_news)
+[![X](https://img.shields.io/badge/X-%23000000.svg?logo=X&logoColor=white)](https://x.com/david_nguyen94)
+
+<!-- Source README.md git-blob: 1b9806659ae3b249b513bc1997df022c464a3a99 -->
 
 [English](README.md) · **Tiếng Việt** · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md)
 
@@ -157,6 +160,12 @@ Trước **mỗi bước thanh toán trên giao diện**, bạn phải xác nh�
 Khi một bước đang chạy, các nút **Check Device & Offers**, **Run** và các tùy chọn chế độ hoặc bước sẽ tạm khóa để tránh chạy nhiều thao tác cùng lúc. Bạn vẫn có thể xem trợ giúp và nhật ký kỹ thuật. Nút **Next** chỉ xuất hiện khi kết quả thanh toán có thể được kiểm tra trước khi tiếp tục; nếu xảy ra lỗi hoặc chưa rõ kết quả, công cụ không cho chuyển sang bước kế tiếp.
 
 **Dừng hoặc thoát:** Với Steps 0–1, bạn có thể yêu cầu dừng tiến trình trên máy. Với Steps 2–5, **Stop after this step** chỉ ngăn công cụ chạy tiếp bước sau, **không buộc dừng giao dịch đang xử lý**. Nếu nhấn **Q / Exit** trong lúc thanh toán, công cụ sẽ đợi bước hiện tại kết thúc rồi mới thoát. Phím **D** bật/tắt nhật ký kỹ thuật, còn **R** chạy theo chế độ đã chọn.
+
+### Cập nhật ứng dụng
+
+Khi mở dashboard, công cụ kiểm tra ngầm xem nhánh `main` chính thức có bản mới hay không. Nhấn **Check for updates** để kiểm tra lại. Khi có bản mới, nhấn **Update & Restart** để cài đúng bản đang hiển thị và mở lại bằng chương trình khởi động dành cho hệ điều hành của bạn. Phiên bản được hiển thị bằng mã Git rút gọn. Dashboard mở lại ở trạng thái chờ; không bước nào hay giao dịch nào được tiếp tục tự động.
+
+Tự cập nhật chỉ áp dụng cho bản sao Git chính thức đang ở nhánh `main`, không có thay đổi cục bộ, không có thao tác Git chưa hoàn tất và có lịch sử cho phép tiến thẳng tới bản mới. Nhánh phát triển, bản sao từ dự án khác và bản giải nén ZIP cần cập nhật thủ công; hãy giữ các bản ZIP trong thư mục riêng. Lỗi mạng hoặc Git xuất hiện tại khu vực cập nhật và có thể thử lại. Nút cập nhật bị khóa khi đang chạy bước, chẩn đoán kết nối, xác nhận thanh toán hoặc chờ kiểm tra Google Play trong chuỗi có hướng dẫn. Trong lúc cài đặt, không thể chạy bước mới hay dùng Exit; vẫn có thể xem trợ giúp và thông tin kỹ thuật. Công cụ không dùng reset hay stash để xóa hoặc cất thay đổi cục bộ.
 
 ## 4. PowerShell CLI (nâng cao)
 

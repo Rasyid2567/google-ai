@@ -1,6 +1,9 @@
 # ePlus AI Toolkit — 한국어
 
-<!-- Source README.md git-blob: 52a6b829e68d1c83f2ffba023a0d43364ea8b6eb -->
+[![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?logo=telegram&logoColor=white)](https://t.me/eplus_news)
+[![X](https://img.shields.io/badge/X-%23000000.svg?logo=X&logoColor=white)](https://x.com/david_nguyen94)
+
+<!-- Source README.md git-blob: 1b9806659ae3b249b513bc1997df022c464a3a99 -->
 
 [English](README.md) · [Tiếng Việt](README.vi.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · **한국어** · [Español](README.es.md) · [Français](README.fr.md)
 
@@ -154,6 +157,12 @@ sh run-macos.sh
 TUI에서 **각 결제 단계는 별도 승인이 필요합니다**. 도구가 결제 제출을 시도했다고 표시해도 [Google Play 구독 관리](https://play.google.com/store/account/subscriptions)에서 실제 구독, 요금과 갱신일을 확인하세요. 직접 변경 사항을 확인한 경우에만 **Verified in Google Play → Next**를 선택하세요. 도구는 구독 성공을 독립적으로 증명할 수 없습니다.
 
 **중지/종료:** Step 0–1에서는 Stop이 로컬 검사를 종료하도록 요청합니다. Step 2–5의 **Stop after this step**은 이후 단계를 막을 뿐 **진행 중인 결제를 강제 종료하지 않습니다**. 결제 중 **Q / Exit**는 현재 단계 종료 후 종료합니다. **D**는 기술 로그, **R**은 선택한 모드 실행입니다.
+
+### 앱 업데이트
+
+대시보드를 열면 공식 `main` 브랜치에 새 버전이 있는지 백그라운드에서 확인합니다. **Check for updates**를 누르면 다시 확인할 수 있습니다. 새 버전이 있으면 **Update & Restart**를 눌러 표시된 버전을 설치하고, 운영체제에 맞는 실행 스크립트로 대시보드를 대기 상태에서 다시 엽니다. 버전은 짧은 Git 커밋 ID로 표시됩니다. 이전 단계나 결제 작업은 자동으로 재개되지 않습니다.
+
+자동 업데이트는 공식 Git 복제본의 `main` 브랜치에서만 사용할 수 있습니다. 로컬 변경이나 완료되지 않은 Git 작업이 없어야 하며, 새 버전으로 빨리 감기가 가능한 이력이어야 합니다. 개발 브랜치, 파생 프로젝트와 소스 ZIP은 수동으로 업데이트하고 ZIP 설치본은 별도 폴더에 보관하세요. 네트워크 또는 Git 오류는 업데이트 영역에 표시되며 다시 확인할 수 있습니다. 단계 실행, 연결 진단, 결제 승인 또는 안내 절차에서 Google Play 확인을 기다리는 동안에는 업데이트 버튼이 잠깁니다. 설치 중에는 새 단계를 실행하거나 Exit를 사용할 수 없지만 도움말과 기술 정보는 볼 수 있습니다. 업데이트 기능은 로컬 파일에 reset이나 stash를 실행하지 않습니다.
 
 ## 4. PowerShell 명령어 (고급)
 

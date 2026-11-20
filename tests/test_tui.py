@@ -482,6 +482,8 @@ class TextualSmokeTests(unittest.IsolatedAsyncioTestCase):
                 async with app.run_test(size=(110, 35)) as pilot:
                     await pilot.click("#advanced_toggle")
                     await pilot.pause()
+                    app.query_one("#run").scroll_visible(animate=False)
+                    await pilot.pause()
                     await pilot.click("#run")
                     await pilot.pause()
                     self.assertIsInstance(app.screen, Approval)

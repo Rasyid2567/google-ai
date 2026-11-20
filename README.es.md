@@ -1,6 +1,9 @@
 # ePlus AI Toolkit — Español
 
-<!-- Source README.md git-blob: 52a6b829e68d1c83f2ffba023a0d43364ea8b6eb -->
+[![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?logo=telegram&logoColor=white)](https://t.me/eplus_news)
+[![X](https://img.shields.io/badge/X-%23000000.svg?logo=X&logoColor=white)](https://x.com/david_nguyen94)
+
+<!-- Source README.md git-blob: 1b9806659ae3b249b513bc1997df022c464a3a99 -->
 
 [English](README.md) · [Tiếng Việt](README.vi.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · **Español** · [Français](README.fr.md)
 
@@ -155,6 +158,12 @@ Los meses son **nombres históricos de los pasos**, no una garantía de ampliaci
 El TUI exige **aprobación explícita por cada paso de pago**. Aunque aparezca un mensaje de pago enviado, comprueba el estado real, los cargos y la renovación en [Suscripciones de Google Play](https://play.google.com/store/account/subscriptions). Pulsa **Verified in Google Play → Next** solo si has confirmado personalmente el cambio. La herramienta **no puede demostrar por sí misma** la activación.
 
 **Detener/salir:** Stop en los pasos 0–1 solicita cancelar el proceso local. En los pasos 2–5, **Stop after this step** evita los pasos siguientes, pero **no fuerza la interrupción de un pago en curso**. **Q / Exit** espera a que acabe el paso de pago actual. **D** alterna los detalles; **R** inicia el modo seleccionado.
+
+### Actualizar la aplicación
+
+Al abrir el panel, la herramienta comprueba en segundo plano si hay una revisión nueva en la rama oficial `main`. **Check for updates** repite la comprobación. Si hay una versión nueva, **Update & Restart** instala la revisión que aparece en pantalla y vuelve a abrir el panel en reposo mediante el script de inicio del sistema operativo. Las versiones se identifican por el código abreviado del commit de Git. No se reanuda ningún paso ni operación de pago.
+
+La actualización automática requiere un clon Git oficial en `main`, sin cambios locales ni operaciones Git pendientes y con un historial que permita avanzar directamente a la nueva revisión. Las ramas de desarrollo, los proyectos derivados y los ZIP de código fuente se actualizan manualmente; guarda los ZIP en carpetas separadas. Los errores de red o Git aparecen en el área de actualización y permiten volver a intentarlo. La actualización queda bloqueada durante un paso, un diagnóstico de conexión, una aprobación de pago o la espera de verificación en Google Play dentro de una secuencia guiada. Durante la instalación se bloquean los nuevos pasos y Exit; la ayuda y los detalles técnicos siguen disponibles. El actualizador no ejecuta reset ni stash sobre los archivos locales.
 
 ## 4. Comandos de PowerShell (avanzado)
 

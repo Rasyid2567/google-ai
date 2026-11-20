@@ -1,6 +1,9 @@
 # ePlus AI Toolkit — 日本語
 
-<!-- Source README.md git-blob: 52a6b829e68d1c83f2ffba023a0d43364ea8b6eb -->
+[![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?logo=telegram&logoColor=white)](https://t.me/eplus_news)
+[![X](https://img.shields.io/badge/X-%23000000.svg?logo=X&logoColor=white)](https://x.com/david_nguyen94)
+
+<!-- Source README.md git-blob: 1b9806659ae3b249b513bc1997df022c464a3a99 -->
 
 [English](README.md) · [Tiếng Việt](README.vi.md) · [简体中文](README.zh-CN.md) · **日本語** · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md)
 
@@ -154,6 +157,12 @@ sh run-macos.sh
 TUI では**購入ステップごとに明示的な承認**が必要です。チェックアウトを送信した旨が表示されても、[Google Play の定期購入](https://play.google.com/store/account/subscriptions)で現在の契約、料金、更新日を確認してください。実際に変更を確認した場合のみ **Verified in Google Play → Next** を選びます。ツール単体では契約成立を証明できません。
 
 **Stop / Exit：**Step 0〜1 の Stop はローカル処理の中止を要求します。Step 2〜5 の **Stop after this step** は後続ステップを止めますが、**処理中の決済を強制終了しません**。決済中の **Q / Exit** は現在の処理終了後に終了します。**D** は詳細ログ、**R** は選択中のモード実行です。
+
+### アプリの更新
+
+ダッシュボードの起動時に、公式の `main` ブランチに新しい版があるかをバックグラウンドで確認します。**Check for updates** で再確認できます。新版が見つかったら **Update & Restart** を押すと、表示されている版をインストールし、OS に対応した起動スクリプトで待機状態のダッシュボードを開き直します。版は Git コミットの短い識別子で表示されます。ステップや支払い処理が自動で再開されることはありません。
+
+自動更新には、公式の Git クローンで `main` ブランチを使用していること、ローカルの変更や未完了の Git 操作がないこと、新版へ早送りできる履歴であることが必要です。開発ブランチ、派生プロジェクト、ソース ZIP は手動で更新し、ZIP 版は別のフォルダーに保管してください。ネットワークや Git のエラーは更新欄に表示され、再確認できます。ステップの実行中、接続診断中、支払い確認中、およびガイド付きの手順で Google Play の確認を待っている間は更新できません。インストール中は新しいステップや Exit を使用できませんが、ヘルプと技術情報は閲覧できます。更新機能はローカルファイルに reset や stash を実行しません。
 
 ## 4. PowerShell コマンド（上級者向け）
 
