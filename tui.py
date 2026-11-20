@@ -161,7 +161,7 @@ class GoogleAITUI(App[None]):
     #quickstart, #continue_initial, #next { background: #64d6b0; color: #0b2620; text-style: bold; }
     #quickstart:disabled, #continue_initial:disabled, #next:disabled { background: #233d37; color: #80958e; }
     #continue_initial, #next, #stop, #finish { display: none; }
-    #main_actions #finish { width: 18; margin-right: 1; }
+    #main_actions #finish { width: 14; margin-right: 1; }
     #stop { color: #e4bd7c; }
     #secondary_actions { height: 1; margin-top: 1; }
     #secondary_actions Button { width: auto; height: 1; min-height: 1; background: transparent; color: #9aadc5; }
@@ -391,11 +391,7 @@ class GoogleAITUI(App[None]):
         self.query_one("#recheck", Button).disabled = locked or self.sequence
         self.query_one("#offers_toggle", Button).display = self._check_listed and not review and not self.advanced_visible
         self.query_one("#offers_toggle", Button).disabled = locked or self.sequence
-        advanced_action = self.query_one("#advanced_toggle", Button)
-        # During checkout review, Advanced is locked. Keep it visible during
-        # running checks, but do not let it squeeze the two review actions.
-        advanced_action.display = not review
-        advanced_action.disabled = locked or self.sequence
+        self.query_one("#advanced_toggle", Button).disabled = locked or self.sequence
         self.query_one("#diagnose", Button).disabled = locked or self.sequence
         for selector in ("#run", "#sequence", "#run_all", "#mode"):
             self.query_one(selector).disabled = locked or self.sequence
