@@ -168,3 +168,141 @@ class DashboardLayoutTests(unittest.IsolatedAsyncioTestCase):
                 app._update_check_done(UpdateInfo("available", "New version · abcdef12 → 12345678"))
                 self.assertTrue(app.query_one("#update_bar").has_class("available"))
                 self.assertEqual(str(app.query_one("#update").label), "Update & Restart")
+
+
+class ResponsiveScreenTests(unittest.IsolatedAsyncioTestCase):
+    """Exercise the visible layout and mouse controls, never actual Android or billing."""
+
+    SIZES = ((110, 35), (90, 20), (80, 24), (62, 22), (60, 20), (58, 20), (48, 20))
+
+    def assert_onscreen(self, widget, size, *, label=False):
+        region = widget.region
+        self.assertGreater(region.width, 0, widget.id)
+        self.assertGreater(region.height, 0, widget.id)
+        self.assertGreaterEqual(region.x, 0, widget.id)
+        self.assertGreaterEqual(region.y, 0, widget.id)
+        self.assertLessEqual(region.right, size[0], widget.id)
+        self.assertLessEqual(region.bottom, size[1] - 1, widget.id)
+        if label:
+            self.assertGreaterEqual(widget.content_region.width, len(str(widget.label)), widget.id)
+
+    async def test_resizing_live_dashboard_keeps_primary_and_toolbar_controls_in_view(self):
+        from tui import GoogleAITUI
+        with tempfile.TemporaryDirectory() as directory:
+            app = GoogleAITUI(repo=Path(directory))
+            with patch.object(GoogleAITUI, "run_stage"):
+                async with app.run_test(size=(110, 35)) as pilot:
+                    for size in self.SIZES[1:] + self.SIZES[:1]:
+                        await pilot.resize_terminal(*size)
+                        await pilot.pause()
+                        self.assertEqual((app.size.width, app.size.height), size)
+                        for selector in ("#quickstart", "#advanced_toggle", "#nav_help",
+                                         "#diagnose", "#debug", "#exit", "#update"):
+                            self.assert_onscreen(app.query_one(selector), size, label=True)
+                        for selector in ("#quickstart", "#advanced_toggle"):
+                            button = app.query_one(selector)
+                            button.focus()
+                            await pilot.pause()
+                            screenshot = unescape(app.export_screenshot()).replace("\xa0", " ")
+                            self.assertIn(str(button.label), screenshot, selector)
+
+    async def test_help_and_checkout_approval_dialogs_fit_all_responsive_breakpoints(self):
+        from tui import Approval, GoogleAITUI, HelpScreen
+        for size in self.SIZES:
+            with self.subTest(size=size), tempfile.TemporaryDirectory() as directory:
+                app = GoogleAITUI(repo=Path(directory))
+                with patch.object(GoogleAITUI, "run_stage") as stage:
+                    async with app.run_test(size=size) as pilot:
+                        await pilot.click("#nav_help")
+                        await pilot.pause()
+                        self.assertIsInstance(app.screen, HelpScreen)
+                        for selector in ("#help_card", "#help_body", "#close_help"):
+                            self.assert_onscreen(app.screen.query_one(selector), size,
+                                                 label=selector == "#close_help")
+                        await pilot.click("#close_help")
+                        self.assertNotIsInstance(app.screen, HelpScreen)
+                        app._confirm_stage(2, False)
+                        await pilot.pause()
+                        self.assertIsInstance(app.screen, Approval)
+                        for selector in ("#approval_card", "#approval_title", "#approval_message",
+                                         "#cancel", "#approve"):
+                            self.assert_onscreen(app.screen.query_one(selector), size,
+                                                 label=selector in ("#cancel", "#approve"))
+                        await pilot.click("#cancel")
+                        await pilot.pause()
+                        self.assertNotIsInstance(app.screen, Approval)
+                        self.assertFalse(app._approval_pending)
+                    stage.assert_not_called()
+
+    async def test_advanced_modes_run_button_and_return_are_accessible(self):
+        from tui import Approval, GoogleAITUI
+        from textual.widgets import Select
+        for size in self.SIZES:
+            with self.subTest(size=size), tempfile.TemporaryDirectory() as directory:
+                app = GoogleAITUI(repo=Path(directory))
+                with patch.object(GoogleAITUI, "run_stage") as stage:
+                    async with app.run_test(size=size) as pilot:
+                        await pilot.click("#advanced_toggle")
+                        await pilot.pause()
+                        self.assertTrue(app.advanced_visible)
+                        for selector in ("#mode", "#step", "#run", "#advanced_toggle"):
+                            self.assert_onscreen(app.query_one(selector), size,
+                                                 label=selector in ("#run", "#advanced_toggle"))
+                        for mode, label in (("single", "Run selected step"),
+                                            ("from", "Run from selected step"),
+                                            ("all", "Run all: Steps 2-5")):
+                            app.query_one("#mode", Select).value = mode
+                            await pilot.pause()
+                            run_button = app.query_one("#run")
+                            self.assertEqual(str(run_button.label), label)
+                            self.assert_onscreen(run_button, size, label=True)
+                        # All begins at Step 2 and must still open a separate approval.
+                        await pilot.click("#run")
+                        await pilot.pause()
+                        self.assertIsInstance(app.screen, Approval)
+                        await pilot.click("#cancel")
+                        await pilot.click("#advanced_toggle")
+                        self.assertFalse(app.advanced_visible)
+                    stage.assert_not_called()
+
+    async def test_busy_offers_review_next_and_finish_keep_buttons_clickable(self):
+        from tui import Approval, GoogleAITUI
+        report = {"status": "listed", "detected_play_account": "owner@example.invalid",
+                  "offers": [{"id": "12months-eft", "micros": "0", "period": "P1Y"}]}
+        for size in self.SIZES:
+            with self.subTest(size=size), tempfile.TemporaryDirectory() as directory:
+                app = GoogleAITUI(repo=Path(directory))
+                with patch.object(GoogleAITUI, "run_stage") as stage:
+                    async with app.run_test(size=size) as pilot:
+                        app._start(1, False)
+                        await pilot.pause()
+                        self.assert_onscreen(app.query_one("#stop"), size, label=True)
+                        self.assertTrue(app.query_one("#advanced_toggle").disabled)
+                        app._finished(1, Outcome("listed", "Offers loaded", "Review account."), report)
+                        await pilot.pause()
+                        for selector in ("#continue_initial", "#recheck", "#offers_toggle"):
+                            self.assert_onscreen(app.query_one(selector), size, label=True)
+                        await pilot.click("#offers_toggle")
+                        self.assertTrue(app.query_one("#offer_view").display)
+                        await pilot.click("#offers_toggle")
+                        self.assertFalse(app.query_one("#offer_view").display)
+                        app._start(2, True)
+                        app._finished(
+                            2, Outcome("checkout_requested", "Check Google Play",
+                                       "Verify manually.", True), None
+                        )
+                        await pilot.pause()
+                        for selector in ("#next", "#finish"):
+                            button = app.query_one(selector)
+                            self.assert_onscreen(button, size, label=True)
+                            button.focus()
+                            await pilot.pause()
+                            screenshot = unescape(app.export_screenshot()).replace("\xa0", " ")
+                            self.assertIn(str(button.label), screenshot, selector)
+                        await pilot.click("#next")
+                        self.assertIsInstance(app.screen, Approval)
+                        await pilot.click("#cancel")
+                        await pilot.click("#finish")
+                        self.assertFalse(app.sequence)
+                        self.assertTrue(app.query_one("#quickstart").display)
+                    stage.assert_not_called()
