@@ -21,7 +21,7 @@ from textual import on, work
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
-from textual.widgets import Button, Footer, Header, Link, RichLog, Select, Static
+from textual.widgets import Button, Footer, Link, RichLog, Select, Static
 
 from tui_core import STAGES, Outcome, command_for_step, mask_email, \
     needs_setup, offer_explorer_lines, outcome_for_stage, read_fresh_report, \
@@ -36,12 +36,12 @@ class Approval(ModalScreen[bool]):
     CSS = """
     Approval { align: center middle; background: #070d19 75%; }
     #approval_card {
-        width: 66; max-width: 92%; height: auto;
-        padding: 2 3; background: #15243a; border: round #3d6383;
+        width: 72; max-width: 94%; height: 24; max-height: 90%;
+        padding: 1 2; background: #17212e; border: round #806542;
     }
     #approval_title { text-style: bold; color: #ebf5ff; margin-bottom: 1; }
-    #approval_message { color: #c9d8e8; margin-bottom: 2; }
-    #approval_actions { height: auto; align-horizontal: right; }
+    #approval_message { height: 1fr; min-height: 2; overflow-y: auto; color: #c9d8e8; margin-bottom: 1; }
+    #approval_actions { height: 3; align-horizontal: right; }
     #approval_actions Button { margin-left: 1; }
     """
 
@@ -74,129 +74,162 @@ class GoogleAITUI(App[None]):
         ("r", "run_selected", "Run step"),
         ("q", "quit_safely", "Quit"),
     ]
+    ENABLE_COMMAND_PALETTE = False
     CSS = """
-    Screen { background: #081424; color: #e8f2fc; }
-    Header, Footer { background: #11243e; color: #d7e8fa; }
-    #screen { height: 1fr; min-height: 0; padding: 0 1; }
-    #brand {
-        height: 3; background: #122741; border: round #28628d;
-        color: #f0f8ff; padding: 0 2; align: left middle;
+    Screen { background: #0e141d; color: #dce4ef; }
+    Footer { background: #151e29; color: #8fa1b8; }
+    Button {
+        height: 3; min-width: 0; padding: 0 1; border: none;
+        background: #202c3a; color: #d1dbe8; text-style: none;
     }
-    #support_label { width: auto; height: 1; color: #c8dff1; }
-    #support_link {
-        width: auto; height: 1; color: #75d8ff;
-        text-style: underline bold;
-    }
-    #support_link:hover { color: #e6f8ff; }
-    #credit { height: 1; color: #87b8d4; }
-    #credit Static { width: auto; height: 1; color: #87b8d4; }
-    #credit Link { width: auto; height: 1; color: #75d8ff; text-style: underline; }
-    #credit Link:hover { color: #e6f8ff; }
-    #update_bar { height: 3; background: #12263d; }
-    #update_status { width: 1fr; height: 1; margin: 1 1 0 1; color: #91e3ff; }
-    #update { width: 24; height: 3; margin: 0; }
+    Button:hover { background: #2c3d50; }
+    Button:focus { text-style: bold; outline: solid #67d6b2; }
+    Button:disabled { background: #18222e; color: #65758a; }
+    #screen { height: 1fr; min-height: 0; padding: 0 2; }
+    #brand { height: 3; align: left middle; }
+    #brand_title { width: 1fr; height: 1; color: #f0f4fa; }
+    #support_label { width: auto; height: 1; color: #7f91a8; }
+    #support_link { width: auto; height: 1; color: #83b8d9; }
+    Link:hover { color: #a3e8d3; text-style: underline; }
     #details { height: 3; margin-bottom: 1; }
     #device, #account {
-        width: 1fr; height: 3; background: #12263d;
-        border: round #295a7e; padding: 0 1;
+        width: 1fr; height: 3; padding: 0 2; background: #17212e;
+        color: #bdcbdc; content-align: left middle;
     }
     #account { margin-left: 1; }
     #content { height: 1fr; min-height: 0; }
     #controls {
-        width: 26; min-width: 26; min-height: 0;
-        border: round #2b5577; background: #101f35;
-        padding: 0 1; overflow-y: auto; scrollbar-size: 1 1;
+        width: 25; min-width: 25; min-height: 0;
+        padding: 1 1 0 0; border-right: solid #253345;
+        overflow-y: auto; scrollbar-size: 1 1;
     }
-    #results { width: 1fr; min-width: 26; min-height: 0; margin-left: 1; overflow-y: auto; scrollbar-size: 1 1; }
-    .section { color: #6cdbf8; text-style: bold; margin: 0 0 1 0; }
-    #workflow { height: auto; margin-bottom: 1; }
-    .workflow-step { color: #b4cbe0; height: 1; }
-    #nav_help, #diagnose, #debug, #exit {
-        width: 100%; height: 3; margin: 0;
+    .section { height: 1; color: #8ca1bb; text-style: bold; margin: 0; }
+    #workflow { height: auto; margin-top: 1; }
+    .workflow-step { height: 2; color: #93a5bc; }
+    .workflow-step.running { color: #72e0bd; text-style: bold; }
+    .workflow-step.done { color: #72e0bd; }
+    .workflow-step.review { color: #e4bd7c; }
+    .workflow-note { height: auto; color: #687d97; margin: 0 0 1 0; }
+    #results {
+        width: 1fr; min-width: 0; min-height: 0; margin-left: 2;
+        overflow-y: auto; scrollbar-size: 1 1;
     }
-    #nav_home, #nav_quick, #advanced, #sequence, #run_all { display: none; }
-    #quickstart { display: block; width: 100%; height: 3; margin: 0 0 1 0; }
-    #advanced_toggle { width: 100%; height: 3; margin: 0; }
-    #workflow_actions { display: none; height: auto; margin-top: 1; border-top: solid #285d83; padding-top: 1; }
-    #status_panel { min-height: 8; overflow-y: auto; scrollbar-size: 1 1; }
-
     #welcome_panel {
-        height: auto; max-height: 65%; overflow-y: auto; border: round #2b97bc;
-        background: #112b49; padding: 1 2; margin-bottom: 1;
+        height: auto; max-height: 65%; padding: 0; margin-bottom: 1;
+        overflow-y: auto; scrollbar-size: 1 1;
     }
-    #welcome { color: #91e3ff; text-style: bold; height: 1; }
-    #quick_hint { color: #afcce3; height: auto; margin: 0 0 1 0; }
-    #payment_notice {
-        height: auto; margin: 1 0 0 0; padding: 0 1;
-        color: #e2ecf4; background: #233248; border-left: solid #d6a34f;
+    #welcome { height: 1; color: #edf4fc; text-style: bold; }
+    #quick_hint { height: auto; color: #95a9c2; margin-bottom: 1; }
+    #primary_actions { height: 3; margin-bottom: 1; }
+    #quickstart {
+        width: 26; min-width: 24; height: 3;
+        background: #64d6b0; color: #0b2620; text-style: bold;
     }
-    #payment_notice_compact { display: none; }
-    #read_only { color: #81c6df; height: auto; margin-top: 1; }
-    #workflow_actions { height: auto; }
+    #quickstart:hover { background: #8ce8ca; }
+    #quickstart:disabled { background: #233d37; color: #80958e; }
+    #advanced_toggle { width: 29; height: 3; margin-left: 1; background: #17212e; }
+    #nav_home, #nav_quick, #advanced, #sequence, #run_all { display: none; }
+    #payment_notice_compact {
+        height: auto; color: #ceb58e; padding-left: 1;
+        border-left: solid #806542;
+    }
+    #workflow_actions {
+        display: none; height: auto; margin-top: 1; padding-top: 1;
+        border-top: solid #253345;
+    }
     #form_row { height: auto; }
     .field { width: 1fr; min-width: 12; height: auto; }
     #step_field { margin-left: 1; }
-    #mode_label, #advanced_label {
-        color: #8edff1; text-style: bold; height: 1; margin: 0 0 1 0;
-    }
+    #mode_label, #advanced_label { height: 1; margin-bottom: 1; color: #95a9c2; }
     #mode, #step { width: 100%; margin: 0; }
+    SelectCurrent { background: #17212e; border: tall #253345; }
     #run_row { height: auto; margin-top: 1; }
-    #run { width: 25; min-width: 17; height: 3; margin: 0; }
-    #mode_hint {
-        width: 1fr; height: auto; color: #a5c8df;
-        padding: 0 1;
+    #run { width: 25; min-width: 17; background: #244d65; color: #e5f3ff; }
+    #mode_hint { width: 1fr; height: auto; padding: 0 1; color: #95a9c2; }
+    #read_only { height: auto; color: #d0b58c; margin-top: 1; }
+    #payment_notice {
+        height: auto; margin-top: 1; padding-left: 1;
+        color: #b5c2d4; border-left: solid #806542;
     }
-    #next, #stop { display: none; width: 100%; height: 3; margin-top: 1; }
     #status_panel {
-        height: 1fr; min-height: 0; border: round #285a80;
-        background: #101f35; padding: 0 1;
+        height: 1fr; min-height: 5; padding: 0 1;
+        border: round #2d3e52; background: #131d29;
+        overflow-y: auto; scrollbar-size: 1 1;
     }
-    #state { color: #f2f9ff; text-style: bold; margin: 1 0 0 0; }
-    #message { color: #c5ddee; }
-    #step_result { color: #8cdfbb; height: auto; }
-    #offers_title { display: none; color: #8edff1; text-style: bold; margin-top: 1; }
+    #status_heading { height: 1; }
+    #status_heading .section { width: 1fr; color: #71d9ba; }
+    #elapsed { width: auto; height: 1; color: #758ba5; }
+    #state { height: auto; margin-top: 1; color: #f0f4fa; text-style: bold; }
+    #message { height: auto; color: #acbed3; }
+    #step_result { height: auto; color: #9cd3b9; }
+    #activity { height: auto; color: #758ba5; margin-top: 1; }
+    #offers_title { display: none; color: #95a9c2; text-style: bold; margin-top: 1; }
     #offer_view {
         display: none; height: 8; min-height: 4; margin-top: 1;
-        border: round #285a80; background: #081a2d;
+        border: round #2d3e52; background: #0e1722;
     }
-    #elapsed, #activity { color: #95c4dd; }
     #debug_log {
-        display: none; height: 1fr; min-height: 3;
-        border: round #294b67; background: #071528;
+        display: none; height: 1fr; min-height: 3; margin-top: 1;
+        border: round #253345; background: #0b121b;
     }
     #manual { display: none; width: 100%; height: 3; }
-    #hint { color: #83b1cf; height: auto; margin-top: 1; }
-    Screen.compact #brand { height: 1; border: none; padding: 0 1; }
-    Screen.compact #credit, Screen.compact #hint { display: none; }
-    Screen.compact #update_bar { height: 1; }
-    Screen.compact #update_status { margin: 0 1; }
-    Screen.compact #update { height: 1; min-height: 1; border: none; }
-    Screen.compact #details { height: 1; margin-bottom: 0; }
-    Screen.compact #device, Screen.compact #account { height: 1; border: none; }
-    Screen.compact #welcome_panel { padding: 0 1; }
-    Screen.compact #quickstart { margin-bottom: 0; }
-    Screen.compact #quick_hint, Screen.compact #read_only { display: none; }
-    Screen.compact #welcome { display: none; }
-    Screen.compact #payment_notice { display: none; }
-    Screen.compact #payment_notice_compact {
-        display: block; height: 1; margin: 0;
-        color: #ffe0a0; background: #283047;
+    #hint { display: none; }
+    #transaction_actions { height: auto; }
+    #next, #stop { display: none; width: 1fr; height: 3; margin-top: 1; }
+    #next { background: #244d65; }
+    #stop { color: #e4bd7c; }
+    #toolbar {
+        height: 1; margin-top: 1; layout: grid;
+        grid-size: 4; grid-columns: 15 29 26 1fr; grid-rows: 1;
     }
-    Screen.compact #welcome_panel { padding: 0 1; }
-    Screen.compact #quickstart, Screen.compact #advanced_toggle { height: 3; }
-    Screen.narrow #form_row { layout: vertical; }
-    Screen.narrow #step_field { margin: 1 0 0 0; }
-    Screen.narrow #run_row { layout: vertical; }
-    Screen.narrow #run { width: 100%; }
-    Screen.narrow #mode_hint { padding: 1 0 0 0; }
-    Screen.narrow #controls { width: 21; min-width: 21; }
-    Screen.tiny #content { layout: vertical; }
-    Screen.tiny #controls {
-        width: 100%; min-width: 0; height: auto;
-        max-height: 3; overflow-y: auto; margin-bottom: 1;
+    #toolbar Button {
+        width: 100%; height: 1; min-height: 1; border: none; padding: 0;
+        background: transparent; color: #9aadc5;
     }
-    Screen.tiny #workflow { display: none; }
-    Screen.tiny #results { width: 100%; min-width: 0; margin-left: 0; }
+    #toolbar Button:hover, #toolbar Button:focus { background: #243247; color: #e3edf8; }
+    #toolbar Button:disabled { color: #52647c; }
+    #update_bar { height: 1; margin-top: 1; }
+    #update_status { width: 1fr; height: 1; color: #758ba5; }
+    #update {
+        width: 22; height: 1; min-height: 1; border: none;
+        background: #202c3a; color: #a8bed4;
+    }
+    #update_bar.available #update { background: #244d44; color: #8ee8c7; }
+    #update_bar.available #update_status { color: #8ee8c7; }
+    #credit { height: 1; margin-top: 1; }
+    #credit Static { width: auto; height: 1; color: #687d97; }
+    #credit Link { width: auto; height: 1; color: #8ca1bb; }
+    Screen.compact #screen { padding: 0 1; }
+    Screen.compact #brand { height: 1; }
+    Screen.compact #details { height: 2; margin: 0; }
+    Screen.compact #device, Screen.compact #account { height: 2; padding: 0 1; }
+    Screen.compact #quick_hint, Screen.compact #hint { display: none; }
+    Screen.compact #primary_actions { margin-bottom: 0; }
+    Screen.compact #welcome_panel { max-height: 60%; }
+    Screen.compact #state { margin-top: 0; }
+    Screen.compact #activity { margin-top: 0; }
+    Screen.compact #toolbar, Screen.compact #update_bar, Screen.compact #credit { margin: 0; }
+    Screen.compact .workflow-step { height: 1; }
+    Screen.compact #controls { padding-top: 0; }
+    Screen.compact.session-active #welcome_panel { display: none; }
+    Screen.narrow #controls { display: none; }
+    Screen.narrow #toolbar { grid-size: 2; grid-columns: 1fr 1fr; grid-rows: 1 1; height: 2; }
+    Screen.narrow #toolbar Button { width: 100%; padding: 0; }
+    Screen.narrow #results { margin-left: 0; }
+    Screen.tiny #screen { padding: 0 1; }
+    Screen.tiny #support_label { display: none; }
+    Screen.tiny #toolbar { layout: grid; grid-size: 2; grid-rows: 1 1; height: 2; }
+    Screen.tiny #toolbar Button { width: 100%; }
+    Screen.tiny #form_row, Screen.tiny #run_row { layout: vertical; }
+    Screen.tiny #step_field { margin: 1 0 0 0; }
+    Screen.tiny #run { width: 100%; }
+    Screen.tiny #mode_hint { padding: 1 0 0 0; }
+    Screen.tiny #credit { display: none; }
+    Screen.micro #welcome { display: none; }
+    Screen.micro #primary_actions { layout: vertical; height: 2; }
+    Screen.micro #quickstart, Screen.micro #advanced_toggle {
+        width: 100%; height: 1; min-height: 1; margin: 0;
+    }
     """
 
     def __init__(self, *, repo: Path, selected_step: int = 1,
@@ -230,42 +263,39 @@ class GoogleAITUI(App[None]):
         self._last_mode = "single"
 
     def compose(self) -> ComposeResult:
-        yield Header(show_clock=True)
         with Vertical(id="screen"):
             with Horizontal(id="brand"):
+                yield Static("[bold]ePlus AI Toolkit[/bold]  [dim]/ ePlus.DEV[/dim]", id="brand_title")
                 yield Static("Support: ", id="support_label")
-                yield Link("https://t.me/eplus_news", url="https://t.me/eplus_news",
+                yield Link("Telegram ↗", url="https://t.me/eplus_news",
                            tooltip="Telegram support channel", id="support_link")
-            with Horizontal(id="credit"):
-                yield Static("  Original ")
-                yield Link("@gylive", url="https://github.com/gylive",
-                           tooltip="Original author on GitHub", id="original_author")
-                yield Static("  |  Maintained ")
-                yield Link("@hoangsvit", url="https://github.com/hoangsvit",
-                           tooltip="Maintainer on GitHub", id="maintainer")
-            with Horizontal(id="update_bar"):
-                yield Static("Checking for updates...", id="update_status", markup=False)
-                yield Button("Check for updates", id="update", disabled=True)
             with Horizontal(id="details"):
                 yield Static("ANDROID DEVICE\nMuMu • Auto-detect", id="device")
                 yield Static("GOOGLE ACCOUNT\nNot checked", id="account")
             with Horizontal(id="content"):
                 with Vertical(id="controls"):
-                    yield Static("STEPS", classes="section")
+                    yield Static("WORKFLOW", classes="section")
                     with Vertical(id="workflow"):
+                        yield Static("Inspect first", classes="workflow-note")
                         for stage in STAGES:
-                            yield Static(f"○  {stage.number}. {stage.label}",
-                                         id=f"stage_{stage.number}", classes="workflow-step")
-                    yield Button("Help & Guide", id="nav_help")
-                    yield Button("Diagnose Android connection", id="diagnose")
-                    yield Button("Show technical details", id="debug")
-                    yield Button("Exit toolkit", id="exit")
+                            if stage.number == 2:
+                                yield Static("Checkout · confirm", classes="workflow-note")
+                            item = Static(f"○  {stage.number}. {self._stage_label(stage.number)}",
+                                          id=f"stage_{stage.number}", classes="workflow-step")
+                            item.tooltip = stage.label
+                            yield item
                 with Vertical(id="results"):
                     with Vertical(id="welcome_panel"):
-                        yield Static("GET STARTED · READ-ONLY CHECK", id="welcome")
-                        yield Static("Check MuMu connection and Google AI offers without opening checkout.", id="quick_hint")
-                        yield Button("Check Device & Offers", id="quickstart", variant="success")
-                        yield Button("Advanced: Run by step  +", id="advanced_toggle")
+                        yield Static("Start with your device & offers", id="welcome")
+                        yield Static("Check the Android connection and available offers without opening checkout.", id="quick_hint")
+                        with Horizontal(id="primary_actions"):
+                            yield Button("Check Device & Offers", id="quickstart", variant="success")
+                            yield Button("Advanced: Run by step  +", id="advanced_toggle")
+                        yield Static(
+                            "Steps 2–5 may charge money. Review Google Play terms.\n"
+                            "3 separate US$1 checks (not one US$3); 24 months not guaranteed.",
+                            id="payment_notice_compact",
+                        )
                         with Vertical(id="workflow_actions"):
                             with Horizontal(id="form_row"):
                                 with Vertical(classes="field", id="mode_field"):
@@ -286,41 +316,70 @@ class GoogleAITUI(App[None]):
                                 yield Static("Runs one step; no next step is automatic.", id="mode_hint")
                             yield Button("Run sequence from step", id="sequence")
                             yield Button("Run all", id="run_all")
-                            yield Button("Verified in Google Play → Next",
-                                         id="next", disabled=True)
-                            yield Button("Stop after current step", id="stop", disabled=True)
                             yield Static("Steps 2–5 can open checkout and require confirmation.", id="read_only")
-                        yield Static(
-                            "24-month example: Step 2 (12 months) + Step 3 (6) + Step 4 (6).\n"
-                            "Have at least US$3 available: 3 separate US$1 card checks, "
-                            "not one US$3 payment.\n"
-                            "These may be temporary holds. Verify each step in Google Play; "
-                            "24 months is not guaranteed.",
-                            id="payment_notice",
-                        )
-                        yield Static(
-                            "3 separate US$1 checks (not one US$3); 24 months not guaranteed.",
-                            id="payment_notice_compact",
-                        )
+                            yield Static(
+                                "24-month example: Step 2 (12 months) + Step 3 (6) + Step 4 (6).\n"
+                                "Have at least US$3 available: 3 separate US$1 card checks, "
+                                "not one US$3 payment.\n"
+                                "These may be temporary holds. Verify each step in Google Play; "
+                                "24 months is not guaranteed.",
+                                id="payment_notice",
+                            )
                     with Vertical(id="status_panel"):
-                        yield Static("LIVE STATUS", classes="section")
+                        with Horizontal(id="status_heading"):
+                            yield Static("LIVE STATUS", classes="section")
+                            yield Static("Elapsed: --", id="elapsed")
                         yield Static("Ready — no check started", id="state")
-                        yield Static("Press Check Device & Offers to begin. Advanced modes are optional.", id="message")
+                        yield Static("Check your device and offers to begin.", id="message")
                         yield Static("", id="step_result")
                         yield Static("AVAILABLE OFFERS · FIRST PHASE ONLY", id="offers_title")
                         yield RichLog(id="offer_view", wrap=True, highlight=False, markup=False)
-                        yield Static("Elapsed: --", id="elapsed")
                         yield Static("Waiting for your action.", id="activity")
                         yield Button("Completed action on Android", id="manual", disabled=True)
                         yield RichLog(id="debug_log", wrap=True, highlight=False, markup=False)
                         yield Static("Review Google Play pricing and renewal terms "
                                      "before each checkout.", id="hint")
+                    with Horizontal(id="transaction_actions"):
+                        yield Button("Verified in Google Play → Next", id="next", disabled=True)
+                        yield Button("Stop after current step", id="stop", disabled=True)
+            with Horizontal(id="toolbar"):
+                yield Button("Help & Guide", id="nav_help")
+                yield Button("Diagnose Android connection", id="diagnose")
+                yield Button("Show technical details", id="debug")
+                yield Button("Exit toolkit", id="exit")
+            with Horizontal(id="update_bar"):
+                yield Static("Checking for updates...", id="update_status", markup=False)
+                yield Button("Check for updates", id="update", disabled=True)
+            with Horizontal(id="credit"):
+                yield Static("Original ")
+                yield Link("@gylive", url="https://github.com/gylive",
+                           tooltip="Original author on GitHub", id="original_author")
+                yield Static("   ·   Maintained ")
+                yield Link("@hoangsvit", url="https://github.com/hoangsvit",
+                           tooltip="Maintainer on GitHub", id="maintainer")
         yield Footer()
+
+    @staticmethod
+    def _stage_label(step: int) -> str:
+        return {4: "Pro +6 months #2", 5: "Optional +6"}.get(step, STAGES[step].label)
 
     def on_resize(self, event) -> None:
         self.screen.set_class(event.size.height < 27, "compact")
         self.screen.set_class(event.size.width < 90, "narrow")
         self.screen.set_class(event.size.width < 62, "tiny")
+        self.screen.set_class(event.size.width < 58, "micro")
+        self._refresh_toolbar_labels()
+
+    def _refresh_toolbar_labels(self) -> None:
+        if not self.is_mounted:
+            return
+        self.query_one("#diagnose", Button).label = (
+            "Diagnose Android" if self.size.width < 62 else "Diagnose Android connection"
+        )
+        self.query_one("#debug", Button).label = (
+            ("Hide details" if self.debug_visible else "Show details") if self.size.width < 58
+            else ("Hide technical details" if self.debug_visible else "Show technical details")
+        )
 
     @on(Button.Pressed, "#nav_home")
     def home_pressed(self) -> None:
@@ -387,10 +446,11 @@ class GoogleAITUI(App[None]):
                 "Steps 2–5 can charge money. Confirm account, future price and renewal date."
             )
         self.query_one("#debug_log", RichLog).display = self.debug_visible
-        self.query_one("#debug", Button).label = "Hide technical details" if self.debug_visible else "Show technical details"
+        self._refresh_toolbar_labels()
         if self.start_sequence:
             self.query_one("#mode", Select).value = "from"
         self._update_run_mode()
+        self.query_one("#quickstart", Button).focus()
 
     def _refresh_update_controls(self) -> None:
         button = self.query_one("#update", Button)
@@ -416,7 +476,11 @@ class GoogleAITUI(App[None]):
         self._checking_update = False
         self._update_info = info
         status = self.query_one("#update_status", Static)
-        status.update(info.message)
+        message = info.message
+        if message == "Automatic updates require main. Update development branches manually.":
+            message = "Development build · Git"
+        status.update(message)
+        self.query_one("#update_bar").set_class(info.state == "available", "available")
         status.tooltip = info.message
         self._refresh_update_controls()
 
@@ -516,8 +580,9 @@ class GoogleAITUI(App[None]):
 
     def _set_workflow(self, step: int, state: str) -> None:
         marker = {"running": "●", "done": "✓", "review": "!"}.get(state, "○")
+        self.query_one(f"#stage_{step}", Static).set_classes(f"workflow-step {state}")
         self.query_one(f"#stage_{step}", Static).update(
-            f"{marker}  {step}. {STAGES[step].label}"
+            f"{marker}  {step}. {self._stage_label(step)}"
         )
 
     def _set_message(self, value: str) -> None:
@@ -680,9 +745,7 @@ class GoogleAITUI(App[None]):
             for line in self._last_output:
                 log.write(line)
         log.display = self.debug_visible
-        self.query_one("#debug", Button).label = (
-            "Hide technical details" if self.debug_visible else "Show technical details"
-        )
+        self._refresh_toolbar_labels()
 
     def action_run_selected(self) -> None:
         self.selected_pressed()
@@ -712,6 +775,7 @@ class GoogleAITUI(App[None]):
             return
         self.busy = True
         self.sequence = sequence
+        self.screen.add_class("session-active")
         self._refresh_update_controls()
         self.current_step = step
         self._stop_after_step = False
@@ -925,6 +989,7 @@ class GoogleAITUI(App[None]):
             self.query_one("#next", Button).disabled = True
             self.query_one("#next", Button).display = False
             self.sequence = False
+        self.screen.set_class(self.sequence, "session-active")
         self._refresh_update_controls()
         if self._exit_after_step:
             self.exit()

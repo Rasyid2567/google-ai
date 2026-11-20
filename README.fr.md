@@ -3,7 +3,7 @@
 [![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?logo=telegram&logoColor=white)](https://t.me/eplus_news)
 [![X](https://img.shields.io/badge/X-%23000000.svg?logo=X&logoColor=white)](https://x.com/david_nguyen94)
 
-<!-- Source README.md git-blob: 1b9806659ae3b249b513bc1997df022c464a3a99 -->
+<!-- Source README.md git-blob: 4d5b9e38e9d9539b40ee961e3c5d10e4ced75af5 -->
 
 [English](README.md) · [Tiếng Việt](README.vi.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · **Français**
 
@@ -13,7 +13,7 @@
 
 **ePlus AI Toolkit** permet de consulter les offres Google AI Pro accessibles via Google One et Google Play sur un appareil Android. L'outil fonctionne sous **Windows et macOS** : vous le lancez depuis PowerShell sur Windows, ou Terminal (zsh/bash) sur Mac. L'interface Textual et les commandes utilisent le même moteur Python, ADB et Frida.
 
-![Interface ePlus AI Toolkit](https://github.com/user-attachments/assets/f16cde7e-022f-43bc-97fe-310012b0a5d3)
+![Interface ePlus AI Toolkit](assets/images/dashboard.png)
 
 > [!CAUTION]
 > **Outil non officiel ; des frais réels peuvent être facturés.** Les **étapes 2 à 5** peuvent ouvrir un véritable paiement Google Play et appuyer automatiquement sur **Subscribe (S'abonner)**. L'affichage d'une offre, d'un prix initial nul ou d'un message indiquant qu'un paiement a été demandé **ne prouve pas** l'éligibilité, la gratuité, l'activation ni la prolongation de l'abonnement. Avant toute opération, vérifiez dans Google Play le compte, le montant dû aujourd'hui, le prix de renouvellement et la date de facturation. Arrêter l'outil n'annule pas une transaction déjà envoyée.
@@ -119,6 +119,8 @@ Le tableau de bord propose deux fonctions de vérification issues du parcours de
 **Un premier prix à zéro ne garantit ni la gratuité ni une prolongation de l'abonnement.** En mode consultation uniquement, Step 1 interroge les produits `g1.2tb.ai.subs_variant`, `g1.play.2tb.ai` et `g1.2tb.ai`. Les étapes 2–5 conservent leurs requêtes propres. Comme le rapport Android ne donne pas tous les tarifs des périodes suivantes, Offer Explorer indique que les futurs prix sont **non vérifiés**. Vérifiez les tarifs et les conditions directement dans Google Play.
 
 ## 3. Interface Textual
+
+La nouvelle interface place les informations de l’appareil et du compte en haut, affiche une liste compacte des étapes à gauche dans les fenêtres larges et regroupe **Check Device & Offers** avec **Advanced: Run by step**. **Live Status** dispose de son propre panneau ; l’aide, le diagnostic de connexion, les détails techniques et les mises à jour se trouvent en dessous. Dans les petites fenêtres, la liste latérale se masque et une étape en cours bénéficie de l’espace disponible pour garder Stop/Next visibles. Un bref avertissement de paiement reste affiché avant l’exécution ; **Advanced: Run by step** donne l’exemple complet des trois vérifications de carte. Les longs messages de confirmation défilent tandis que **Cancel** et **Continue** restent visibles.
 
 Lorsqu'une étape est en cours, les commandes **Check Device & Offers**, **Run** et les sélecteurs de mode ou d'étape sont désactivés pour éviter les exécutions simultanées. L'étape 0 peut modifier la configuration locale ; l'étape 1 ne déclenche pas de paiement, mais peut préparer ADB et Frida. Vérifiez le résultat dans Google Play avant de poursuivre avec **Next**. **Arrêter ou fermer l'outil n'annule pas une transaction déjà transmise.**
 

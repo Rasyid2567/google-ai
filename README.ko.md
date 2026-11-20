@@ -3,7 +3,7 @@
 [![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?logo=telegram&logoColor=white)](https://t.me/eplus_news)
 [![X](https://img.shields.io/badge/X-%23000000.svg?logo=X&logoColor=white)](https://x.com/david_nguyen94)
 
-<!-- Source README.md git-blob: 1b9806659ae3b249b513bc1997df022c464a3a99 -->
+<!-- Source README.md git-blob: 4d5b9e38e9d9539b40ee961e3c5d10e4ced75af5 -->
 
 [English](README.md) · [Tiếng Việt](README.vi.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · **한국어** · [Español](README.es.md) · [Français](README.fr.md)
 
@@ -12,7 +12,7 @@
 
 **ePlus AI Toolkit**은 Android 기기의 Google One과 Google Play에 표시되는 Google AI Pro 혜택을 확인하는 도구입니다. **Windows**에서는 PowerShell로, **macOS**에서는 Terminal(zsh/bash)로 실행합니다. Textual 화면과 명령줄 방식은 모두 Python·ADB·Frida 기반의 동일한 실행 엔진을 사용합니다.
 
-![ePlus AI Toolkit 화면](https://github.com/user-attachments/assets/f16cde7e-022f-43bc-97fe-310012b0a5d3)
+![ePlus AI Toolkit 화면](assets/images/dashboard.png)
 
 > [!CAUTION]
 > **비공식 도구이며 실제 요금이 청구될 수 있습니다.** **Step 2–5**는 실제 Google Play 결제 화면을 열고 상황에 따라 **Subscribe(구독)**를 자동으로 누를 수 있습니다. 프로모션이 표시되거나 첫 결제 금액이 0이거나 결제 요청 메시지가 나타나더라도 **프로모션 적용, 무료 구독, 구독 활성화, 기간 연장이 확인된 것은 아닙니다**. 실행 전에 Google Play에서 계정, 오늘의 결제 금액, 이후 요금과 갱신일을 확인해야 합니다. 도구를 중지해도 이미 제출한 거래는 취소되지 않습니다.
@@ -118,6 +118,8 @@ sh run-macos.sh
 **첫 기간의 요금이 0이라고 해서 무료 이용이나 구독 기간 연장이 보장되지는 않습니다.** Step 1에서는 목록 조회 용도로만 `g1.2tb.ai.subs_variant`, `g1.play.2tb.ai`, `g1.2tb.ai`를 확인합니다. Steps 2–5는 각 단계에 맞는 조회를 그대로 사용합니다. Android 보고서에는 이후 결제 기간의 요금이 모두 포함되지 않으므로, Offer Explorer에서는 미래 요금을 **미확인**으로 표시합니다. 실제 청구 금액과 갱신 조건은 Google Play에서 직접 확인하세요.
 
 ## 3. 대시보드 사용법
+
+새 화면은 기기와 계정 정보를 위쪽에 배치하고, 넓은 창에서는 왼쪽에 간결한 단계 목록을 표시합니다. **Check Device & Offers**와 **Advanced: Run by step**는 나란히 배치되며, **Live Status**는 별도 영역에 표시됩니다. 도움말, 연결 진단, 기술 정보 및 업데이트는 아래쪽에 있습니다. 작은 창에서는 단계 목록을 숨기고, 단계 실행 중에는 상태 영역을 우선 표시하여 Stop/Next 버튼이 보이도록 합니다. 실행 전에는 짧은 결제 경고가 항상 표시되며, **Advanced: Run by step**를 펼치면 카드 확인 세 번에 관한 전체 예시를 볼 수 있습니다. 확인 창의 긴 설명은 스크롤할 수 있고 **Cancel**과 **Continue**는 항상 보입니다.
 
 단계가 실행되는 동안에는 **Check Device & Offers**, **Run**, 실행 모드와 단계 선택을 잠가 다른 작업이 동시에 시작되지 않도록 합니다. Step 0은 컴퓨터의 설정을 변경할 수 있습니다. Step 1은 결제를 시작하지 않지만 사전 준비 과정에서 ADB/Frida 설정이 바뀔 수 있습니다. 다음 단계로 진행하기 전에 반드시 Google Play에서 결과를 확인하세요. **Stop이나 Exit를 눌러도 이미 제출한 결제는 취소되지 않습니다.**
 

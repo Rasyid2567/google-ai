@@ -3,7 +3,7 @@
 [![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?logo=telegram&logoColor=white)](https://t.me/eplus_news)
 [![X](https://img.shields.io/badge/X-%23000000.svg?logo=X&logoColor=white)](https://x.com/david_nguyen94)
 
-<!-- Source README.md git-blob: 1b9806659ae3b249b513bc1997df022c464a3a99 -->
+<!-- Source README.md git-blob: 4d5b9e38e9d9539b40ee961e3c5d10e4ced75af5 -->
 
 [English](README.md) · [Tiếng Việt](README.vi.md) · **简体中文** · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md)
 
@@ -12,7 +12,7 @@
 
 **ePlus AI Toolkit** 用于查看 Android 设备上的 Google One 和 Google Play 提供的 Google AI Pro 优惠。它支持 **Windows 和 macOS**：Windows 用户通过 PowerShell 启动，Mac 用户则使用 Terminal（zsh/bash）。Textual 图形化终端界面与命令行模式共用 Python、ADB 和 Frida 执行引擎。
 
-![ePlus AI Toolkit 界面](https://github.com/user-attachments/assets/f16cde7e-022f-43bc-97fe-310012b0a5d3)
+![ePlus AI Toolkit 界面](assets/images/dashboard.png)
 
 > [!CAUTION]
 > **非官方工具，可能产生真实费用。** **Step 2–5** 可能打开 Google Play 的真实结账页面，并自动点击 **Subscribe（订阅）**。发现优惠、看到首期价格为 0，或收到“已提交结账”的消息，**均不代表**账户有资格、订阅免费、已激活或续期成功。每次操作前，请在 Google Play 上核实账户、本次收费、后续价格和续订日期。停止工具不能撤销已经提交的交易。
@@ -118,6 +118,8 @@ sh run-macos.sh
 **首期价格为零，不等于一定可以免费使用或成功延长订阅。** Step 1 只在列表查询模式下检查 `g1.2tb.ai.subs_variant`、`g1.play.2tb.ai` 和 `g1.2tb.ai`，而 Steps 2–5 继续使用各自的查询流程。由于 Android 报告未提供后续各期的完整费用信息，Offer Explorer 会把未来价格标记为**尚未验证**。实际收费与续费条款请在 Google Play 中确认。
 
 ## 3. Textual 界面
+
+新版界面将设备和账户信息放在顶部，宽窗口左侧显示精简的步骤栏，**Check Device & Offers** 与 **Advanced: Run by step** 并排显示。**Live Status** 使用独立区域；帮助、连接诊断、技术信息及更新位于下方。窗口较小时，步骤栏会收起；运行步骤时优先显示状态区域，确保 Stop/Next 按钮可见。运行前始终显示简要付款警告；展开 **Advanced: Run by step** 可查看三次银行卡验证的完整示例。确认窗口中的长消息可滚动，而 **Cancel** 和 **Continue** 始终可见。
 
 在某个步骤运行期间，**Check Device & Offers**、**Run** 以及模式和步骤选择功能会暂时锁定，避免重复执行。Step 0 可能修改电脑上的设置；Step 1 虽不会主动付款，但在准备过程中可能调整 ADB/Frida。请先到 Google Play 核实结果，再进入下一步。**点击 Stop 或 Exit 并不能撤销已提交的交易。**
 

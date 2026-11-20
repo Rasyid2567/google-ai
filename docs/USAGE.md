@@ -4,6 +4,10 @@
 
 ## Use the dashboard (recommended)
 
+The workspace keeps device/account cards at the top, a compact workflow rail on wide terminals, and **Check Device & Offers** beside **Advanced: Run by step**. **Live Status** has its own panel; help, connection diagnostics, technical details and updates sit below the workspace. On smaller terminals, the rail collapses and an active step gets the available workspace so Stop/Next remain visible. The billing summary stays visible before a run; expand **Advanced: Run by step** for the full three-check example. Approval dialogs scroll long messages while keeping **Cancel** and **Continue** visible.
+
+[Standard dashboard preview](../assets/images/dashboard.png) · [Compact 90×20 preview](../assets/images/dashboard-compact.png). Both previews show simulated idle data.
+
 ### Start with Check Device & Offers
 
 1. Click **Check Device & Offers** on the welcome screen. It invokes **Step 1 — Available offers**, intended to *list* offers rather than initiate checkout.

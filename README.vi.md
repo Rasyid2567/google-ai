@@ -3,7 +3,7 @@
 [![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?logo=telegram&logoColor=white)](https://t.me/eplus_news)
 [![X](https://img.shields.io/badge/X-%23000000.svg?logo=X&logoColor=white)](https://x.com/david_nguyen94)
 
-<!-- Source README.md git-blob: 1b9806659ae3b249b513bc1997df022c464a3a99 -->
+<!-- Source README.md git-blob: 4d5b9e38e9d9539b40ee961e3c5d10e4ced75af5 -->
 
 [English](README.md) · **Tiếng Việt** · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md)
 
@@ -12,7 +12,7 @@
 
 **ePlus AI Toolkit** giúp bạn kiểm tra các ưu đãi Google AI Pro được hiển thị qua Google One và Google Play trên thiết bị Android. Công cụ chạy trên **Windows và macOS**: Windows sử dụng PowerShell, còn macOS sử dụng Terminal (zsh/bash). Cả giao diện Textual lẫn chế độ dòng lệnh đều dùng chung bộ xử lý Python, ADB và Frida.
 
-![Giao diện ePlus AI Toolkit](https://github.com/user-attachments/assets/f16cde7e-022f-43bc-97fe-310012b0a5d3)
+![Giao diện ePlus AI Toolkit](assets/images/dashboard.png)
 
 > [!CAUTION]
 > **Đây không phải công cụ chính thức của Google và có thể phát sinh chi phí.** Ở các bước **2–5**, công cụ có thể mở trang thanh toán Google Play và tự nhấn **Subscribe**. Ưu đãi xuất hiện trong danh sách, mức giá đầu tiên bằng 0 hoặc thông báo đã gửi yêu cầu thanh toán **không có nghĩa là** bạn đủ điều kiện, được dùng miễn phí hay đã gia hạn thành công. Trước khi thực hiện, hãy kiểm tra đúng tài khoản, khoản tiền phải trả ngay, mức phí những kỳ sau và ngày gia hạn trong **Google Play**. Dừng công cụ không hủy được giao dịch đã gửi.
@@ -120,6 +120,8 @@ Trên bảng điều khiển có hai chức năng kiểm tra được phát tri�
 **Giá kỳ đầu bằng 0 không đồng nghĩa với việc được dùng miễn phí hoặc gia hạn thành công.** Step 1 chỉ truy vấn danh sách của ba mã sản phẩm `g1.2tb.ai.subs_variant`, `g1.play.2tb.ai` và `g1.2tb.ai`; các bước 2–5 vẫn truy vấn đúng ưu đãi dành cho từng bước. Vì báo cáo Android chưa có đủ thông tin về những kỳ thanh toán tiếp theo, Offer Explorer đánh dấu giá tương lai là **chưa được xác minh**. Hãy đối chiếu các điều khoản và số tiền thực tế ngay trong Google Play.
 
 ## 3. Sử dụng giao diện
+
+Giao diện mới đặt thông tin thiết bị và tài khoản ở trên, danh sách bước gọn ở bên trái khi cửa sổ đủ rộng, cùng nút **Check Device & Offers** cạnh **Advanced: Run by step**. **Live Status** có vùng riêng; trợ giúp, chẩn đoán kết nối, thông tin kỹ thuật và cập nhật nằm phía dưới. Với cửa sổ nhỏ, thanh bên được ẩn; khi chạy bước, giao diện ưu tiên vùng theo dõi để luôn thấy Stop/Next. Cảnh báo thanh toán ngắn hiện sẵn trước khi chạy; mở **Advanced: Run by step** để đọc đầy đủ ví dụ ba lần kiểm tra thẻ. Hộp xác nhận cho phép cuộn nội dung dài và luôn giữ các nút **Cancel**, **Continue** trong tầm nhìn.
 
 Nhấn **Check Device & Offers** để chạy **Step 1 — Available offers** và kiểm tra ưu đãi mà **không bắt đầu thanh toán**. Bạn có thể theo dõi tiến trình tại **Live Status**, chọn **Show technical details** để xem thông tin kỹ thuật và kiểm tra đúng tài khoản trong Google Play. Nếu 30 giây không có thông báo mới, công cụ sẽ cảnh báo; điều đó **chưa có nghĩa là chương trình đã bị treo**.
 

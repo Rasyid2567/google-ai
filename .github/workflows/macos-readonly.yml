@@ -11,6 +11,7 @@ on:
       - "tui_core.py"
       - "app_update.py"
       - "tests/test_app_update.py"
+      - "tests/test_tui_layout.py"
       - "tests/test_macos.py"
       - "docs/MACOS-PREVIEW.md"
       - ".github/workflows/macos-readonly.yml"
@@ -45,7 +46,9 @@ jobs:
       - name: Mock-only tests for all six stage routes and payment guards
         run: python -m unittest discover -s tests -p 'test_macos.py' -v
       - name: Offline source-update and restart tests
-        run: python -m unittest discover -s tests -p 'test_app_update.py' -v
+        run: |
+          python -m unittest discover -s tests -p 'test_app_update.py' -v
+          python -m unittest discover -s tests -p 'test_tui_layout.py' -v
       - name: Package runnable macOS source bundle and SHA-256
         shell: bash
         run: |
@@ -58,6 +61,7 @@ jobs:
             requirements.txt requirements-tui.txt \
             scripts/runtime-lookup.py \
             assets/frida/billing.js assets/modules/module_521.b64 \
+            assets/images/dashboard.png assets/images/dashboard-compact.png \
             README.md docs/MACOS-PREVIEW.md \
             DISCLAIMER.md SECURITY.md THIRD_PARTY_NOTICES.md
           test -s "$zip"

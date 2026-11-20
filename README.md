@@ -7,7 +7,7 @@
 
 A terminal toolkit for **Windows and macOS** to inspect Google AI Pro offers through Android, ADB, Frida and Google Play. The shared Textual dashboard uses a PowerShell/Python launcher on Windows and a native Python adapter on macOS.
 
-<img width="1902" height="912" alt="ePlus AI Toolkit terminal dashboard" src="https://github.com/user-attachments/assets/f16cde7e-022f-43bc-97fe-310012b0a5d3" />
+<img width="1360" height="904" alt="ePlus AI Toolkit terminal dashboard" src="assets/images/dashboard.png" />
 
 > [!CAUTION]
 > **Unofficial project. Potential billing charges.** Steps **2–5** can open a real Google Play checkout and may automatically tap **Subscribe**. An offer appearing in a list, a displayed first-phase price of zero, or a message indicating that the Subscribe action was attempted does **not** establish eligibility, an active subscription, a free subscription, or a changed renewal date. Verify the exact account, today's charge, future pricing and renewal date directly in Google Play before any checkout.
@@ -127,6 +127,8 @@ The dashboard includes two **inspection-first** actions, adapted from the upstre
 **Important:** A zero first phase does *not* prove trial eligibility, subscription activation, renewal dates or future prices. Step 1 queries the three Pro product identifiers documented by upstream (`g1.2tb.ai.subs_variant`, `g1.play.2tb.ai`, `g1.2tb.ai`) **only in list mode**; Steps 2–5 retain their existing targeted queries. The current Android report does not include the complete multi-phase renewal schedule, so the Offer Explorer deliberately labels future pricing as **unverified**. Confirm terms and charges directly with Google Play.
 
 ## Use the dashboard (recommended)
+
+The workspace keeps device/account cards at the top, a compact workflow rail on wide terminals, and **Check Device & Offers** beside **Advanced: Run by step**. **Live Status** has its own panel; help, connection diagnostics, technical details and updates sit below the workspace. On smaller terminals, the rail collapses and an active step gets the available workspace so Stop/Next remain visible. The billing summary stays visible before a run; expand **Advanced: Run by step** for the full three-check example. Approval dialogs scroll long messages while keeping **Cancel** and **Continue** visible.
 
 ### Start with Check Device & Offers
 

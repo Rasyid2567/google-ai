@@ -3,7 +3,7 @@
 [![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?logo=telegram&logoColor=white)](https://t.me/eplus_news)
 [![X](https://img.shields.io/badge/X-%23000000.svg?logo=X&logoColor=white)](https://x.com/david_nguyen94)
 
-<!-- Source README.md git-blob: 1b9806659ae3b249b513bc1997df022c464a3a99 -->
+<!-- Source README.md git-blob: 4d5b9e38e9d9539b40ee961e3c5d10e4ced75af5 -->
 
 [English](README.md) · [Tiếng Việt](README.vi.md) · [简体中文](README.zh-CN.md) · **日本語** · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md)
 
@@ -12,7 +12,7 @@
 
 **ePlus AI Toolkit** は、Android 端末上の Google One / Google Play で表示される Google AI Pro の特典を確認するためのツールです。**Windows** では PowerShell、**macOS** では Terminal（zsh/bash）から起動します。画面操作用の Textual UI とコマンドライン操作には、共通の Python・ADB・Frida エンジンを使用しています。
 
-![ePlus AI Toolkit の画面](https://github.com/user-attachments/assets/f16cde7e-022f-43bc-97fe-310012b0a5d3)
+![ePlus AI Toolkit の画面](assets/images/dashboard.png)
 
 > [!CAUTION]
 > **非公式ツールです。実際の料金が発生する可能性があります。** **Step 2〜5** は Google Play の実際の購入画面を開き、条件によって **Subscribe（定期購入）** を自動タップする場合があります。オファーの表示、初回料金 0、またはチェックアウト送信の表示は、**対象資格・無料提供・契約成立・更新成功の証拠ではありません**。実行前に Google Play でアカウント、今日の請求額、更新料金、次回請求日を確認してください。停止操作は送信済みの取引を取り消しません。
@@ -118,6 +118,8 @@ sh run-macos.sh
 **初回料金が 0 でも、無料で利用できることや有効期間の延長が保証されるわけではありません。** Step 1 では、一覧表示に限り `g1.2tb.ai.subs_variant`、`g1.play.2tb.ai`、`g1.2tb.ai` を照会します。Steps 2–5 は各手順に対応する個別の照会を使います。Android のレポートには次回以降の料金がすべて含まれていないため、Offer Explorer では将来の料金を**未確認**として扱います。実際の請求額や更新条件は Google Play でご確認ください。
 
 ## 3. ダッシュボードの使い方
+
+新しい画面では、上部に端末とアカウントの情報を配置し、幅の広いウィンドウでは左側に簡潔な手順一覧を表示します。**Check Device & Offers** と **Advanced: Run by step** は横に並び、**Live Status** は独立した領域に表示されます。ヘルプ、接続診断、技術情報、更新はその下にあります。小さな画面では手順一覧を隠し、実行中は状況表示を優先して Stop/Next を見える状態に保ちます。実行前には支払いに関する短い注意を表示し、**Advanced: Run by step** を開くとカード確認３回の詳しい例を読めます。確認画面の長い説明はスクロールでき、**Cancel** と **Continue** は常に表示されます。
 
 ステップの実行中は、**Check Device & Offers**、**Run**、実行モードやステップの切り替えを一時的に無効にし、複数の処理が同時に始まらないようにします。Step 0 ではローカル設定が変更される場合があります。Step 1 は購入を開始しませんが、事前準備で ADB / Frida の設定が変わることがあります。次に進む前に Google Play で結果を確認してください。**Stop や Exit では、送信済みの決済を取り消せません。**
 
