@@ -252,8 +252,11 @@ class ResponsiveScreenTests(unittest.IsolatedAsyncioTestCase):
                                             ("from", "Run from selected step"),
                                             ("all", "Run all: Steps 2-5")):
                             app.query_one("#mode", Select).value = mode
-                            await pilot.pause()
                             run_button = app.query_one("#run")
+                            for _ in range(20):
+                                if str(run_button.label) == label:
+                                    break
+                                await pilot.pause(0.05)
                             self.assertEqual(str(run_button.label), label)
                             self.assert_onscreen(run_button, size, label=True)
                         # All begins at Step 2 and must still open a separate approval.
@@ -283,10 +286,16 @@ class ResponsiveScreenTests(unittest.IsolatedAsyncioTestCase):
                         for selector in ("#continue_initial", "#recheck", "#offers_toggle"):
                             self.assert_onscreen(app.query_one(selector), size, label=True)
                         await pilot.click("#offers_toggle")
-                        await pilot.pause()
+                        for _ in range(20):
+                            if app._offers_visible:
+                                break
+                            await pilot.pause(0.05)
                         self.assertTrue(app.query_one("#offer_view").display)
                         await pilot.click("#offers_toggle")
-                        await pilot.pause()
+                        for _ in range(20):
+                            if not app._offers_visible:
+                                break
+                            await pilot.pause(0.05)
                         self.assertFalse(app.query_one("#offer_view").display)
                         app._start(2, True)
                         app._finished(
@@ -304,7 +313,13 @@ class ResponsiveScreenTests(unittest.IsolatedAsyncioTestCase):
                         await pilot.click("#next")
                         self.assertIsInstance(app.screen, Approval)
                         await pilot.click("#cancel")
+                        for _ in range(20):
+                            if not isinstance(app.screen, Approval):
+                                break
+                            await pilot.pause(0.05)
+                        self.assertNotIsInstance(app.screen, Approval)
                         await pilot.click("#finish")
+                        await pilot.pause()
                         self.assertFalse(app.sequence)
                         self.assertTrue(app.query_one("#quickstart").display)
                     self.assertEqual(stage.call_count, 2, "Only mocked stages 1 and 2 run")
