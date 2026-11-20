@@ -156,12 +156,12 @@ class GoogleAITUI(App[None]):
     #manual { display: none; width: 100%; height: 3; }
     #hint { display: none; }
     #action_bar { height: 3; margin-top: 1; }
-    #main_actions { width: 2fr; height: 3; }
+    #main_actions { width: 3fr; height: 3; }
     #main_actions Button { width: 1fr; height: 3; }
     #quickstart, #continue_initial, #next { background: #64d6b0; color: #0b2620; text-style: bold; }
     #quickstart:disabled, #continue_initial:disabled, #next:disabled { background: #233d37; color: #80958e; }
     #continue_initial, #next, #stop, #finish { display: none; }
-    #main_actions #finish { width: 14; margin-right: 1; }
+    #main_actions #finish { width: 20; margin-right: 1; }
     #stop { color: #e4bd7c; }
     #secondary_actions { height: 1; margin-top: 1; }
     #secondary_actions Button { width: auto; height: 1; min-height: 1; background: transparent; color: #9aadc5; }
