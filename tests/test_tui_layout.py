@@ -305,4 +305,4 @@ class ResponsiveScreenTests(unittest.IsolatedAsyncioTestCase):
                         await pilot.click("#finish")
                         self.assertFalse(app.sequence)
                         self.assertTrue(app.query_one("#quickstart").display)
-                    stage.assert_not_called()
+                    self.assertEqual(stage.call_count, 2, "Only mocked stages 1 and 2 run")
