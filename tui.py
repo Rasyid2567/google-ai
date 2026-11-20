@@ -19,7 +19,7 @@ import time
 from rich.markup import escape
 from textual import on, work
 from textual.app import App, ComposeResult
-from textual.containers import Horizontal, Vertical
+from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Button, Footer, Link, RichLog, Select, Static
 
@@ -32,16 +32,19 @@ from app_update import UpdateError, UpdateInfo, check_for_update, install_update
 
 class Approval(ModalScreen[bool]):
     """Clickable approval without long typed phrases."""
-    BINDINGS = [("escape", "cancel", "Cancel")]
+    BINDINGS = [("escape", "cancel", "Cancel"),
+                ("pageup", "scroll_message(-5)", "Scroll warning up"),
+                ("pagedown", "scroll_message(5)", "Scroll warning down")]
 
     CSS = """
     Approval { align: center middle; background: #070d19 75%; }
     #approval_card {
-        width: 72; max-width: 94%; height: 24; max-height: 90%;
+        width: 72; max-width: 94%; height: 24; max-height: 96%;
         padding: 1 2; background: #17212e; border: round #806542;
     }
     #approval_title { text-style: bold; color: #ebf5ff; margin-bottom: 1; }
-    #approval_message { height: 1fr; min-height: 2; overflow-y: auto; color: #c9d8e8; margin-bottom: 1; }
+    #approval_scroll { height: 1fr; min-height: 2; margin-bottom: 1; scrollbar-size: 1 1; }
+    #approval_message { height: auto; color: #c9d8e8; }
     #approval_actions { height: 3; align-horizontal: right; }
     #approval_actions Button { margin-left: 1; }
     """
@@ -53,10 +56,14 @@ class Approval(ModalScreen[bool]):
     def compose(self) -> ComposeResult:
         with Vertical(id="approval_card"):
             yield Static(self.title_text, id="approval_title")
-            yield Static(self.message_text, id="approval_message")
+            with VerticalScroll(id="approval_scroll"):
+                yield Static(self.message_text, id="approval_message")
             with Horizontal(id="approval_actions"):
                 yield Button("Cancel", id="cancel")
                 yield Button("Continue", id="approve", variant="warning")
+
+    def action_scroll_message(self, delta: int) -> None:
+        self.query_one("#approval_scroll", VerticalScroll).scroll_relative(y=delta, animate=False)
 
     @on(Button.Pressed, "#approval_actions Button")
     def approve(self, event: Button.Pressed) -> None:
@@ -68,17 +75,21 @@ class Approval(ModalScreen[bool]):
 
 class HelpScreen(ModalScreen[None]):
     """Keep help separate from the current result and payment instructions."""
-    BINDINGS = [("escape", "close", "Close")]
+    BINDINGS = [("escape", "close", "Close"),
+                ("pageup", "scroll_help(-5)", "Scroll help up"),
+                ("pagedown", "scroll_help(5)", "Scroll help down")]
     CSS = """
     HelpScreen { align: center middle; background: #070d19 75%; }
-    #help_card { width: 72; max-width: 94%; height: 22; max-height: 90%; padding: 1 2; border: round #2d3e52; background: #17212e; }
-    #help_body { height: 1fr; overflow-y: auto; }
+    #help_card { width: 72; max-width: 94%; height: 22; max-height: 96%; padding: 1 2; border: round #2d3e52; background: #17212e; }
+    #help_scroll { height: 1fr; scrollbar-size: 1 1; }
+    #help_body { height: auto; }
     #close_help { height: 3; width: 100%; }
     """
 
     def compose(self) -> ComposeResult:
         with Vertical(id="help_card"):
-            yield Static("[bold]Guided flow[/bold]\n\n"
+            with VerticalScroll(id="help_scroll"):
+                yield Static("[bold]Guided flow[/bold]\n\n"
                          "1. Run Check Device & Offers. Setup may change the Android environment.\n"
                          "2. A fresh matching offer and identified account show the 12-month action. "
                          "This does not prove eligibility or free months.\n"
@@ -92,6 +103,9 @@ class HelpScreen(ModalScreen[None]):
     @on(Button.Pressed, "#close_help")
     def action_close(self) -> None:
         self.dismiss(None)
+
+    def action_scroll_help(self, delta: int) -> None:
+        self.query_one("#help_scroll", VerticalScroll).scroll_relative(y=delta, animate=False)
 
 
 def is_macos_platform() -> bool:
@@ -218,8 +232,11 @@ class GoogleAITUI(App[None]):
     Screen.narrow #action_bar Button:focus { outline: none; text-style: bold underline; }
     Screen.narrow #toolbar { grid-size: 2; grid-columns: 1fr 1fr; grid-rows: 1 1; height: 2; }
     Screen.tiny #support_label, Screen.tiny #credit { display: none; }
-    Screen.tiny #form_row { layout: vertical; }
-    Screen.tiny #step_field { margin: 1 0 0 0; }
+    Screen.form-stacked #form_row { layout: vertical; }
+    Screen.form-stacked #step_field { margin: 1 0 0 0; }
+    Screen.compact.advanced-view #credit { display: none; }
+    Screen.compact #advanced_title { margin-bottom: 0; }
+    Screen.compact #mode_label, Screen.compact #advanced_label { margin-bottom: 0; }
     Screen.micro #controls { display: none; }
     Screen.micro #main_actions { height: auto; layout: vertical; }
     Screen.micro #main_actions Button { height: 1; min-height: 1; width: 100%; margin: 0; }
@@ -353,6 +370,7 @@ class GoogleAITUI(App[None]):
         self.screen_stack[0].set_class(event.size.width < 90, "narrow")
         self.screen_stack[0].set_class(event.size.width < 62, "tiny")
         self.screen_stack[0].set_class(event.size.width < 58, "micro")
+        self.screen_stack[0].set_class(event.size.width < 52, "form-stacked")
         self._refresh_toolbar_labels()
         if self.is_mounted and self.query("#main_actions"):
             self._render_wizard()
