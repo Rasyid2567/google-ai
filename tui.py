@@ -216,7 +216,7 @@ class GoogleAITUI(App[None]):
     Screen.narrow #main_actions Button { height: 2; }
     Screen.narrow #advanced_toggle { width: 100%; min-width: 0; height: 2; min-height: 1; margin: 0; border: none; }
     Screen.narrow #action_bar Button:focus { outline: none; text-style: bold underline; }
-    Screen.tiny #toolbar { grid-size: 2; grid-columns: 1fr 1fr; grid-rows: 1 1; height: 2; }
+    Screen.narrow #toolbar { grid-size: 2; grid-columns: 1fr 1fr; grid-rows: 1 1; height: 2; }
     Screen.tiny #support_label, Screen.tiny #credit { display: none; }
     Screen.tiny #form_row { layout: vertical; }
     Screen.tiny #step_field { margin: 1 0 0 0; }
