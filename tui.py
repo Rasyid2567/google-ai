@@ -155,8 +155,9 @@ class GoogleAITUI(App[None]):
     #debug_log { display: none; height: 8; min-height: 3; margin-top: 1; border: round #253345; background: #0b121b; }
     #manual { display: none; width: 100%; height: 3; }
     #hint { display: none; }
-    #main_actions { height: 3; margin-top: 1; align-horizontal: center; }
-    #main_actions Button { width: 1fr; max-width: 56; height: 3; }
+    #action_bar { height: 3; margin-top: 1; }
+    #main_actions { width: 2fr; height: 3; }
+    #main_actions Button { width: 1fr; height: 3; }
     #quickstart, #continue_initial, #next { background: #64d6b0; color: #0b2620; text-style: bold; }
     #quickstart:disabled, #continue_initial:disabled, #next:disabled { background: #233d37; color: #80958e; }
     #continue_initial, #next, #stop, #finish { display: none; }
@@ -165,7 +166,12 @@ class GoogleAITUI(App[None]):
     #secondary_actions { height: 1; margin-top: 1; }
     #secondary_actions Button { width: auto; height: 1; min-height: 1; background: transparent; color: #9aadc5; }
     #recheck, #offers_toggle { display: none; margin-right: 2; }
-    #advanced_toggle { margin-right: 2; }
+    #advanced_toggle {
+        width: 1fr; min-width: 28; height: 3; margin-left: 2;
+        border: solid #55738e; background: #1b3043; color: #d8e9f7; text-style: bold;
+    }
+    #advanced_toggle:hover { background: #29465e; border: solid #85b5d9; }
+    #advanced_toggle:disabled { background: #18222e; border: solid #2d3e52; color: #65758a; }
     #workflow_actions { display: none; height: 1fr; min-height: 0; overflow-y: auto; scrollbar-size: 1 1; }
     #advanced_title { height: 1; text-style: bold; color: #edf4fc; margin-bottom: 1; }
     #form_row { height: auto; }
@@ -182,6 +188,7 @@ class GoogleAITUI(App[None]):
     Screen.advanced-view #workflow_actions, Screen.advanced-view #advanced_run_actions { display: block; }
     Screen.advanced-view #welcome_panel, Screen.advanced-view #status_panel,
     Screen.advanced-view #main_actions, Screen.advanced-view #recheck, Screen.advanced-view #offers_toggle { display: none; }
+    Screen.advanced-view #advanced_toggle { width: 100%; margin-left: 0; }
     #toolbar { height: 1; margin-top: 1; layout: grid; grid-size: 4; grid-columns: 15 29 26 1fr; grid-rows: 1; }
     #toolbar Button { width: 100%; height: 1; min-height: 1; border: none; padding: 0; background: transparent; color: #9aadc5; }
     #toolbar Button:hover, #toolbar Button:focus { background: #243247; color: #e3edf8; }
@@ -202,14 +209,20 @@ class GoogleAITUI(App[None]):
     Screen.compact #welcome_panel { margin-bottom: 0; }
     Screen.compact #state { margin-top: 0; }
     Screen.compact #toolbar, Screen.compact #update_bar, Screen.compact #credit,
-    Screen.compact #main_actions, Screen.compact #secondary_actions { margin: 0; }
+    Screen.compact #action_bar, Screen.compact #secondary_actions { margin: 0; }
+    Screen.narrow #action_bar { height: auto; layout: vertical; }
+    Screen.narrow #main_actions { width: 100%; height: 2; }
+    Screen.narrow #main_actions Button { height: 2; }
+    Screen.narrow #advanced_toggle { width: 100%; min-width: 0; height: 2; min-height: 1; margin: 0; border: none; }
+    Screen.narrow #action_bar Button:focus { outline: none; text-style: bold underline; }
     Screen.tiny #toolbar { grid-size: 2; grid-columns: 1fr 1fr; grid-rows: 1 1; height: 2; }
     Screen.tiny #support_label, Screen.tiny #credit { display: none; }
     Screen.tiny #form_row { layout: vertical; }
     Screen.tiny #step_field { margin: 1 0 0 0; }
     Screen.micro #controls { display: none; }
     Screen.micro #main_actions { height: auto; layout: vertical; }
-    Screen.micro #main_actions Button { height: 1; min-height: 1; width: 100%; max-width: 100%; margin: 0; }
+    Screen.micro #main_actions Button { height: 1; min-height: 1; width: 100%; margin: 0; }
+    Screen.micro #advanced_toggle { height: 1; }
     """
 
     def __init__(self, *, repo: Path, selected_step: int = 1,
@@ -303,14 +316,15 @@ class GoogleAITUI(App[None]):
                         yield Button("Completed action on Android", id="manual", disabled=True)
                         yield RichLog(id="debug_log", wrap=True, highlight=False, markup=False)
                         yield Static("", id="hint")
-                    with Horizontal(id="main_actions"):
-                        yield Button("Check Device & Offers", id="quickstart", variant="success")
-                        yield Button("Continue: 12-month stage →", id="continue_initial", disabled=True)
-                        yield Button("Finish here", id="finish", disabled=True)
-                        yield Button("Verified in Google Play → Next", id="next", disabled=True)
-                        yield Button("Stop after current step", id="stop", disabled=True)
+                    with Horizontal(id="action_bar"):
+                        with Horizontal(id="main_actions"):
+                            yield Button("Check Device & Offers", id="quickstart", variant="success")
+                            yield Button("Continue: 12-month stage →", id="continue_initial", disabled=True)
+                            yield Button("Finish here", id="finish", disabled=True)
+                            yield Button("Verified in Google Play → Next", id="next", disabled=True)
+                            yield Button("Stop after current step", id="stop", disabled=True)
+                        yield Button("Advanced: Run by step →", id="advanced_toggle")
             with Horizontal(id="secondary_actions"):
-                yield Button("Advanced: Run by step →", id="advanced_toggle")
                 yield Button("Check again", id="recheck")
                 yield Button("View offers", id="offers_toggle")
             with Horizontal(id="toolbar"):
@@ -353,8 +367,7 @@ class GoogleAITUI(App[None]):
             else ("Hide technical details" if self.debug_visible else "Show technical details")
         )
         self.query_one("#advanced_toggle", Button).label = (
-            ("← Guided flow" if self.advanced_visible else "Advanced →") if self.size.width < 62
-            else ("← Back to guided flow" if self.advanced_visible else "Advanced: Run by step →")
+            "← Back to guided flow" if self.advanced_visible else "Advanced: Run by step →"
         )
         self.query_one("#offers_toggle", Button).label = (
             "Hide offers" if self._offers_visible else ("Offers" if self.size.width < 62 else "View offers")

@@ -1,5 +1,6 @@
 """Offline checks for the redesigned dashboard's visible controls and content."""
 from pathlib import Path
+from html import unescape
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -30,9 +31,49 @@ class DashboardLayoutTests(unittest.IsolatedAsyncioTestCase):
                             self.assertLessEqual(region.bottom, size[1] - 1, selector)
                         welcome = app.query_one("#welcome_panel")
                         self.assertEqual(welcome.max_scroll_y, 0, "Default warning must not need scrolling")
+                        primary = app.query_one("#quickstart")
+                        advanced = app.query_one("#advanced_toggle")
+                        self.assertEqual(str(advanced.label), "Advanced: Run by step →")
+                        self.assertLessEqual(len(str(advanced.label)), advanced.content_region.width)
+                        if size[0] >= 90:
+                            self.assertEqual(primary.region.y, advanced.region.y)
+                            self.assertEqual(primary.region.height, advanced.region.height)
+                            self.assertGreaterEqual(advanced.region.x, primary.region.right)
+                        else:
+                            self.assertGreaterEqual(advanced.region.y, primary.region.bottom)
+                            self.assertEqual(primary.region.width, advanced.region.width)
+                        advanced.focus()
+                        await pilot.pause()
+                        self.assertIs(app.focused, advanced)
+                        for button in (primary, advanced):
+                            button.focus()
+                            await pilot.pause()
+                            rendered = unescape(app.export_screenshot()).replace("\xa0", " ")
+                            self.assertIn(str(button.label), rendered, "Focused action text must remain visible")
                         self.assertFalse(app.ENABLE_COMMAND_PALETTE)
                         self.assertFalse(app.busy)
                         stage.assert_not_called()
+
+    async def test_prominent_advanced_control_is_locked_during_active_work(self):
+        from tui import GoogleAITUI
+        with tempfile.TemporaryDirectory() as directory:
+            app = GoogleAITUI(repo=Path(directory))
+            with patch.object(GoogleAITUI, "run_stage"):
+                async with app.run_test(size=(90, 20)) as pilot:
+                    app._start(1, False)
+                    await pilot.pause()
+                    self.assertTrue(app.query_one("#advanced_toggle").disabled)
+                    app.advanced_pressed()
+                    self.assertFalse(app.advanced_visible)
+                    app._finished(1, Outcome("listed", "Offers loaded", "Review account."), None)
+                    await pilot.click("#advanced_toggle")
+                    await pilot.pause()
+                    self.assertTrue(app.advanced_visible)
+                    back = app.query_one("#advanced_toggle")
+                    self.assertGreater(back.region.height, 0)
+                    self.assertLessEqual(back.region.bottom, 19)
+                    await pilot.click("#advanced_toggle")
+                    self.assertFalse(app.advanced_visible)
 
     async def test_toolbar_labels_fit_and_remain_accessible_by_keyboard(self):
         from tui import GoogleAITUI
