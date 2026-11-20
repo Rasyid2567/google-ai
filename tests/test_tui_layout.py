@@ -283,8 +283,10 @@ class ResponsiveScreenTests(unittest.IsolatedAsyncioTestCase):
                         for selector in ("#continue_initial", "#recheck", "#offers_toggle"):
                             self.assert_onscreen(app.query_one(selector), size, label=True)
                         await pilot.click("#offers_toggle")
+                        await pilot.pause()
                         self.assertTrue(app.query_one("#offer_view").display)
                         await pilot.click("#offers_toggle")
+                        await pilot.pause()
                         self.assertFalse(app.query_one("#offer_view").display)
                         app._start(2, True)
                         app._finished(
