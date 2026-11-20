@@ -120,9 +120,9 @@ class DashboardLayoutTests(unittest.IsolatedAsyncioTestCase):
                             self.assertLessEqual(region.right, size[0])
                         await pilot.click("#cancel")
 
-    async def test_review_actions_keep_full_labels_without_disabled_advanced_button(self):
+    async def test_review_actions_keep_full_labels_and_next_is_clickable(self):
         from tui import GoogleAITUI
-        for size in ((110, 35), (90, 20), (60, 20), (48, 20)):
+        for size in ((110, 35), (90, 20), (80, 24), (60, 20), (48, 20)):
             with self.subTest(size=size), tempfile.TemporaryDirectory() as directory:
                 app = GoogleAITUI(repo=Path(directory))
                 with patch.object(GoogleAITUI, "run_stage"):
@@ -134,8 +134,8 @@ class DashboardLayoutTests(unittest.IsolatedAsyncioTestCase):
                         )
                         await pilot.pause()
                         advanced = app.query_one("#advanced_toggle")
-                        self.assertFalse(advanced.display,
-                                         "Unavailable Advanced must not squeeze review controls")
+                        self.assertTrue(advanced.display)
+                        self.assertTrue(advanced.disabled, "Advanced stays locked during review")
                         for selector in ("#next", "#finish"):
                             button = app.query_one(selector)
                             self.assertTrue(button.display)
@@ -148,6 +148,11 @@ class DashboardLayoutTests(unittest.IsolatedAsyncioTestCase):
                             rendered = unescape(app.export_screenshot()).replace("\xa0", " ")
                             self.assertIn(str(button.label), rendered,
                                           "Review action must remain readable when focused")
+                        await pilot.click("#next")
+                        await pilot.pause()
+                        from tui import Approval
+                        self.assertIsInstance(app.screen, Approval, "Next must be clickable at this width")
+                        await pilot.click("#cancel")
 
     async def test_update_state_is_quiet_for_dev_and_highlights_available_version(self):
         from tui import GoogleAITUI
