@@ -291,6 +291,8 @@ class ResponsiveScreenTests(unittest.IsolatedAsyncioTestCase):
                                 break
                             await pilot.pause(0.05)
                         self.assertTrue(app.query_one("#offer_view").display)
+                        # Separate the two clicks so the terminal driver does not group a double-click.
+                        await pilot.pause(0.4)
                         await pilot.click("#offers_toggle")
                         for _ in range(20):
                             if not app._offers_visible:
