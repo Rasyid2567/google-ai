@@ -145,7 +145,7 @@ class DashboardLayoutTests(unittest.IsolatedAsyncioTestCase):
                             self.assertLessEqual(button.region.bottom, size[1] - 1, selector)
                             button.focus()
                             await pilot.pause()
-                            rendered = unescape(app.export_screenshot()).replace("\\xa0", " ")
+                            rendered = unescape(app.export_screenshot()).replace("\xa0", " ")
                             self.assertIn(str(button.label), rendered,
                                           "Review action must remain readable when focused")
 
