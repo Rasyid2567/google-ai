@@ -1,12 +1,25 @@
 """Offline checks for the redesigned dashboard's visible controls and content."""
 from pathlib import Path
 from html import unescape
+import re
 import tempfile
 import unittest
 from unittest.mock import patch
 
 from app_update import UpdateInfo
 from tui_core import Outcome
+
+
+def screen_text(app) -> str:
+    """Visible terminal text in reading order, wrapped lines rejoined."""
+    svg = unescape(app.export_screenshot()).replace("\xa0", " ")
+    cells = re.findall(r'<text[^>]*\bx="([\d.]+)"[^>]*\by="([\d.]+)"[^>]*>([^<>]*)</text>', svg)
+    rows: dict[float, list[tuple[float, str]]] = {}
+    for x, y, text in cells:
+        rows.setdefault(round(float(y)), []).append((float(x), text))
+    lines = ["".join(text for _, text in sorted(parts)) for _, parts in sorted(rows.items())]
+    plain = re.sub(r"[│─╭╮╰╯┌┐└┘▏▎▍▌▋▊▉█▆▅▄▔▁▂▃▇]+", " ", " ".join(lines))
+    return " ".join(plain.split())
 
 
 class DashboardLayoutTests(unittest.IsolatedAsyncioTestCase):
@@ -216,7 +229,7 @@ class ResponsiveScreenTests(unittest.IsolatedAsyncioTestCase):
                         await pilot.click("#nav_help")
                         await pilot.pause()
                         self.assertIsInstance(app.screen, HelpScreen)
-                        for selector in ("#help_card", "#help_body", "#close_help"):
+                        for selector in ("#help_card", "#help_scroll", "#close_help"):
                             self.assert_onscreen(app.screen.query_one(selector), size,
                                                  label=selector == "#close_help")
                         await pilot.click("#close_help")
@@ -224,7 +237,7 @@ class ResponsiveScreenTests(unittest.IsolatedAsyncioTestCase):
                         app._confirm_stage(2, False)
                         await pilot.pause()
                         self.assertIsInstance(app.screen, Approval)
-                        for selector in ("#approval_card", "#approval_title", "#approval_message",
+                        for selector in ("#approval_card", "#approval_title", "#approval_scroll",
                                          "#cancel", "#approve"):
                             self.assert_onscreen(app.screen.query_one(selector), size,
                                                  label=selector in ("#cancel", "#approve"))
@@ -233,6 +246,51 @@ class ResponsiveScreenTests(unittest.IsolatedAsyncioTestCase):
                         self.assertNotIsInstance(app.screen, Approval)
                         self.assertFalse(app._approval_pending)
                     stage.assert_not_called()
+
+    async def test_advanced_selectors_are_visible_or_reachable_by_scrolling(self):
+        from tui import GoogleAITUI
+        for size in self.SIZES:
+            with self.subTest(size=size), tempfile.TemporaryDirectory() as directory:
+                app = GoogleAITUI(repo=Path(directory))
+                with patch.object(GoogleAITUI, "run_stage"):
+                    async with app.run_test(size=size) as pilot:
+                        await pilot.click("#advanced_toggle")
+                        await pilot.pause()
+                        viewport = app.query_one("#workflow_actions").region
+                        for selector in ("#mode", "#step"):
+                            region = app.query_one(selector).region
+                            self.assertGreaterEqual(region.y, viewport.y, selector)
+                            if size[0] >= 52:
+                                self.assertLessEqual(region.bottom, viewport.bottom, selector)
+                        self.assertIn("One step only", screen_text(app))
+                        if size[0] < 52:
+                            app.query_one("#step").scroll_visible(animate=False)
+                            await pilot.pause()
+                        self.assertIn("Available offers", screen_text(app))
+
+    async def test_dialog_warning_text_is_reachable_by_scrolling(self):
+        from tui import Approval, GoogleAITUI, HelpScreen
+        for size in ((90, 20), (48, 20)):
+            with self.subTest(size=size), tempfile.TemporaryDirectory() as directory:
+                app = GoogleAITUI(repo=Path(directory))
+                with patch.object(GoogleAITUI, "run_stage"):
+                    async with app.run_test(size=size) as pilot:
+                        app._confirm_stage(2, False)
+                        await pilot.pause()
+                        self.assertIsInstance(app.screen, Approval)
+                        self.assertIn("Confirm this Google Play account", screen_text(app))
+                        app.screen.query_one("#approval_scroll").scroll_end(animate=False)
+                        await pilot.pause()
+                        self.assertIn("not guaranteed.", screen_text(app))
+                        await pilot.click("#cancel")
+                        await pilot.pause()
+                        await pilot.click("#nav_help")
+                        await pilot.pause()
+                        self.assertIsInstance(app.screen, HelpScreen)
+                        app.screen.query_one("#help_scroll").scroll_end(animate=False)
+                        await pilot.pause()
+                        self.assertIn("only prevents later steps", screen_text(app))
+                        await pilot.click("#close_help")
 
     async def test_advanced_modes_run_button_and_return_are_accessible(self):
         from tui import Approval, GoogleAITUI
