@@ -170,6 +170,7 @@ class GoogleAITUI(App[None]):
         width: 1fr; min-width: 28; height: 3; margin-left: 2;
         border: solid #55738e; background: #1b3043; color: #d8e9f7; text-style: bold;
     }
+    #advanced_toggle:focus { outline: none; text-style: bold underline; }
     #advanced_toggle:hover { background: #29465e; border: solid #85b5d9; }
     #advanced_toggle:disabled { background: #18222e; border: solid #2d3e52; color: #65758a; }
     #workflow_actions { display: none; height: 1fr; min-height: 0; overflow-y: auto; scrollbar-size: 1 1; }
