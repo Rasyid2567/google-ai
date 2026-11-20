@@ -327,6 +327,7 @@ class ResponsiveScreenTests(unittest.IsolatedAsyncioTestCase):
                                 break
                             await pilot.pause(0.05)
                         self.assertIsInstance(app.screen, Approval)
+                        await pilot.pause()
                         await pilot.click("#cancel")
                         for _ in range(20):
                             if not isinstance(app.screen, Approval):
