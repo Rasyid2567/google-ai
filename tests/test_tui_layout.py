@@ -120,6 +120,35 @@ class DashboardLayoutTests(unittest.IsolatedAsyncioTestCase):
                             self.assertLessEqual(region.right, size[0])
                         await pilot.click("#cancel")
 
+    async def test_review_actions_keep_full_labels_without_disabled_advanced_button(self):
+        from tui import GoogleAITUI
+        for size in ((110, 35), (90, 20), (60, 20), (48, 20)):
+            with self.subTest(size=size), tempfile.TemporaryDirectory() as directory:
+                app = GoogleAITUI(repo=Path(directory))
+                with patch.object(GoogleAITUI, "run_stage"):
+                    async with app.run_test(size=size) as pilot:
+                        app._start(2, True)
+                        app._finished(
+                            2, Outcome("checkout_requested", "Check Google Play",
+                                       "Verify manually.", True), None
+                        )
+                        await pilot.pause()
+                        advanced = app.query_one("#advanced_toggle")
+                        self.assertFalse(advanced.display,
+                                         "Unavailable Advanced must not squeeze review controls")
+                        for selector in ("#next", "#finish"):
+                            button = app.query_one(selector)
+                            self.assertTrue(button.display)
+                            self.assertGreaterEqual(button.content_region.width,
+                                                    len(str(button.label)), selector)
+                            self.assertLessEqual(button.region.right, size[0], selector)
+                            self.assertLessEqual(button.region.bottom, size[1] - 1, selector)
+                            button.focus()
+                            await pilot.pause()
+                            rendered = unescape(app.export_screenshot()).replace("\\xa0", " ")
+                            self.assertIn(str(button.label), rendered,
+                                          "Review action must remain readable when focused")
+
     async def test_update_state_is_quiet_for_dev_and_highlights_available_version(self):
         from tui import GoogleAITUI
         with tempfile.TemporaryDirectory() as directory:
