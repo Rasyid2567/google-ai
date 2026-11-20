@@ -3,7 +3,7 @@
 [![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?logo=telegram&logoColor=white)](https://t.me/eplus_news)
 [![X](https://img.shields.io/badge/X-%23000000.svg?logo=X&logoColor=white)](https://x.com/david_nguyen94)
 
-<!-- Source README.md git-blob: 4d5b9e38e9d9539b40ee961e3c5d10e4ced75af5 -->
+<!-- Source README.md git-blob: 6bce0f2c938cf251470668940a6d345e3ce77281 -->
 
 [English](README.md) · [Tiếng Việt](README.vi.md) · **简体中文** · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md)
 
@@ -119,7 +119,9 @@ sh run-macos.sh
 
 ## 3. Textual 界面
 
-新版界面将设备和账户信息放在顶部，宽窗口左侧显示精简的步骤栏，**Check Device & Offers** 与 **Advanced: Run by step** 并排显示。**Live Status** 使用独立区域；帮助、连接诊断、技术信息及更新位于下方。窗口较小时，步骤栏会收起；运行步骤时优先显示状态区域，确保 Stop/Next 按钮可见。运行前始终显示简要付款警告；展开 **Advanced: Run by step** 可查看三次银行卡验证的完整示例。确认窗口中的长消息可滚动，而 **Cancel** 和 **Continue** 始终可见。
+界面采用逐步引导流程：先运行 **Check Device & Offers**（Step 1）。仅当本次检查成功返回有效列表、识别到 Play 账户，并找到首期价格为 0 的指定初始优惠时，才显示 **Continue: 12-month stage →**。点击后仍须单独确认 Step 2，底层程序还会在付款前重新核对账户、优惠和付款条款。检查结果不证明优惠资格、免费月数或订阅已激活。提交付款请求后，只有结果允许继续核对时，才能在亲自检查 Google Play 后点击 **Verified in Google Play → Next**，也可选择 **Finish here** 结束。Step 5 为可选步骤，任何步骤都不会自动接着运行。
+
+**Advanced: Run by step** 打开独立的配置界面，Run 按钮始终可见；**← Back to guided flow** 返回主流程。**From selected step** 仅提供 Steps 2–5；**All: Steps 2–5** 显示从 Step 2 开始的路径并隐藏步骤选择框。**R** 快捷键仅在此界面有效。成功获取列表后，可通过 **View offers** 查看 Offer Explorer。帮助单独打开，不会替换当前结果。
 
 在某个步骤运行期间，**Check Device & Offers**、**Run** 以及模式和步骤选择功能会暂时锁定，避免重复执行。Step 0 可能修改电脑上的设置；Step 1 虽不会主动付款，但在准备过程中可能调整 ADB/Frida。请先到 Google Play 核实结果，再进入下一步。**点击 Stop 或 Exit 并不能撤销已提交的交易。**
 

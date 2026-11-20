@@ -3,7 +3,7 @@
 [![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?logo=telegram&logoColor=white)](https://t.me/eplus_news)
 [![X](https://img.shields.io/badge/X-%23000000.svg?logo=X&logoColor=white)](https://x.com/david_nguyen94)
 
-<!-- Source README.md git-blob: 4d5b9e38e9d9539b40ee961e3c5d10e4ced75af5 -->
+<!-- Source README.md git-blob: 6bce0f2c938cf251470668940a6d345e3ce77281 -->
 
 [English](README.md) · [Tiếng Việt](README.vi.md) · [简体中文](README.zh-CN.md) · **日本語** · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md)
 
@@ -119,7 +119,9 @@ sh run-macos.sh
 
 ## 3. ダッシュボードの使い方
 
-新しい画面では、上部に端末とアカウントの情報を配置し、幅の広いウィンドウでは左側に簡潔な手順一覧を表示します。**Check Device & Offers** と **Advanced: Run by step** は横に並び、**Live Status** は独立した領域に表示されます。ヘルプ、接続診断、技術情報、更新はその下にあります。小さな画面では手順一覧を隠し、実行中は状況表示を優先して Stop/Next を見える状態に保ちます。実行前には支払いに関する短い注意を表示し、**Advanced: Run by step** を開くとカード確認３回の詳しい例を読めます。確認画面の長い説明はスクロールでき、**Cancel** と **Continue** は常に表示されます。
+画面は順番に進む案内方式です。まず **Check Device & Offers**（Step 1）を実行します。今回の照会が正常に完了し、Play アカウントを識別でき、初回価格が 0 の所定の初期オファーが見つかった場合にだけ **Continue: 12-month stage →** が表示されます。このボタンを押すと Step 2 の個別確認が開き、支払い前には処理側でアカウント、オファー、支払い条件を再確認します。照会結果は利用資格、無料期間、契約の有効化を保証しません。支払い要求後に結果を確認できる状態になったら、Google Play で実際の状況を確かめてから **Verified in Google Play → Next** を押すか、**Finish here** で終了します。Step 5 は任意で、次のステップが自動実行されることはありません。
+
+**Advanced: Run by step** は Run ボタンが常に見える独立した設定画面を開き、**← Back to guided flow** で主な案内に戻ります。**From selected step** では Steps 2–5 だけを選べます。**All: Steps 2–5** は Step 2 からの経路を表示し、ステップ選択欄を隠します。**R** キーはこの画面だけで動作します。照会成功後は **View offers** から Offer Explorer を開けます。ヘルプは別に開くため、表示中の結果を書き換えません。
 
 ステップの実行中は、**Check Device & Offers**、**Run**、実行モードやステップの切り替えを一時的に無効にし、複数の処理が同時に始まらないようにします。Step 0 ではローカル設定が変更される場合があります。Step 1 は購入を開始しませんが、事前準備で ADB / Frida の設定が変わることがあります。次に進む前に Google Play で結果を確認してください。**Stop や Exit では、送信済みの決済を取り消せません。**
 

@@ -219,7 +219,7 @@ class UpdateUITests(unittest.IsolatedAsyncioTestCase):
                         run.scroll_visible(animate=False)
                         await pilot.pause()
                         self.assertEqual(app.focused.id, "run")
-                        self.assertGreater(run.region.intersection(app.query_one("#welcome_panel").region).height, 0)
+                        self.assertGreater(run.region.intersection(app.query_one("#content").region).height, 0)
 
     async def test_update_is_locked_during_step_diagnosis_sequence_and_approval(self):
         from tui import GoogleAITUI

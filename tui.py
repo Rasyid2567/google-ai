@@ -24,7 +24,7 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Footer, Link, RichLog, Select, Static
 
 from tui_core import STAGES, Outcome, command_for_step, mask_email, \
-    needs_setup, offer_explorer_lines, outcome_for_stage, read_fresh_report, \
+    initial_checkout_blocker, needs_setup, offer_explorer_lines, outcome_for_stage, read_fresh_report, \
     report_summary, validate_step
 from device_diagnostics import ConnectionDiagnosis, inspect_connection
 from app_update import UpdateError, UpdateInfo, check_for_update, install_update, restart_command
@@ -32,6 +32,7 @@ from app_update import UpdateError, UpdateInfo, check_for_update, install_update
 
 class Approval(ModalScreen[bool]):
     """Clickable approval without long typed phrases."""
+    BINDINGS = [("escape", "cancel", "Cancel")]
 
     CSS = """
     Approval { align: center middle; background: #070d19 75%; }
@@ -61,6 +62,37 @@ class Approval(ModalScreen[bool]):
     def approve(self, event: Button.Pressed) -> None:
         self.dismiss(event.button.id == "approve")
 
+    def action_cancel(self) -> None:
+        self.dismiss(False)
+
+
+class HelpScreen(ModalScreen[None]):
+    """Keep help separate from the current result and payment instructions."""
+    BINDINGS = [("escape", "close", "Close")]
+    CSS = """
+    HelpScreen { align: center middle; background: #070d19 75%; }
+    #help_card { width: 72; max-width: 94%; height: 22; max-height: 90%; padding: 1 2; border: round #2d3e52; background: #17212e; }
+    #help_body { height: 1fr; overflow-y: auto; }
+    #close_help { height: 3; width: 100%; }
+    """
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id="help_card"):
+            yield Static("[bold]Guided flow[/bold]\n\n"
+                         "1. Run Check Device & Offers. Setup may change the Android environment.\n"
+                         "2. A fresh matching offer and identified account show the 12-month action. "
+                         "This does not prove eligibility or free months.\n"
+                         "3. Approve each checkout separately. Verify the actual subscription, charges "
+                         "and renewal date in Google Play before Next. Step 5 is optional.\n\n"
+                         "Advanced: Run by step opens separate controls for one step or a guided sequence.\n"
+                         "Stop on Steps 0–1 cancels the local check; on Steps 2–5 it only prevents later steps.", id="help_body")
+            yield Link("Usage & safety guide", url="https://github.com/hoangsvit/google-ai/blob/main/docs/USAGE.md")
+            yield Button("Close help", id="close_help")
+
+    @on(Button.Pressed, "#close_help")
+    def action_close(self) -> None:
+        self.dismiss(None)
+
 
 def is_macos_platform() -> bool:
     return sys.platform == "darwin"
@@ -88,148 +120,96 @@ class GoogleAITUI(App[None]):
     #screen { height: 1fr; min-height: 0; padding: 0 2; }
     #brand { height: 3; align: left middle; }
     #brand_title { width: 1fr; height: 1; color: #f0f4fa; }
-    #support_label { width: auto; height: 1; color: #7f91a8; }
-    #support_link { width: auto; height: 1; color: #83b8d9; }
+    #support_label, #support_link { width: auto; height: 1; color: #83b8d9; }
     Link:hover { color: #a3e8d3; text-style: underline; }
-    #details { height: 3; margin-bottom: 1; }
-    #device, #account {
-        width: 1fr; height: 3; padding: 0 2; background: #17212e;
-        color: #bdcbdc; content-align: left middle;
-    }
-    #account { margin-left: 1; }
-    #content { height: 1fr; min-height: 0; }
-    #controls {
-        width: 25; min-width: 25; min-height: 0;
-        padding: 1 1 0 0; border-right: solid #253345;
-        overflow-y: auto; scrollbar-size: 1 1;
-    }
-    .section { height: 1; color: #8ca1bb; text-style: bold; margin: 0; }
-    #workflow { height: auto; margin-top: 1; }
-    .workflow-step { height: 2; color: #93a5bc; }
-    .workflow-step.running { color: #72e0bd; text-style: bold; }
+    #controls { height: 3; }
+    .workflow-step { width: 1fr; height: 2; color: #687d97; border-bottom: solid #253345; }
+    .workflow-step.running, .workflow-step.current { color: #72e0bd; text-style: bold; border-bottom: solid #64d6b0; }
     .workflow-step.done { color: #72e0bd; }
+    .workflow-step.reviewed { color: #95a9c2; }
     .workflow-step.review { color: #e4bd7c; }
-    .workflow-note { height: auto; color: #687d97; margin: 0 0 1 0; }
-    #results {
-        width: 1fr; min-width: 0; min-height: 0; margin-left: 2;
-        overflow-y: auto; scrollbar-size: 1 1;
+    #stage_0, #stage_5 { display: none; }
+    #details { height: 3; margin-bottom: 1; }
+    #device, #account { width: 1fr; height: 3; padding: 0 1; background: #17212e; color: #bdcbdc; }
+    #account { margin-left: 1; }
+    #content, #results { height: 1fr; width: 100%; min-height: 0; }
+    #welcome_panel { height: auto; margin-bottom: 1; }
+    #welcome { height: auto; color: #edf4fc; text-style: bold; }
+    #quick_hint, #wizard_summary { height: auto; color: #95a9c2; }
+    #payment_notice_compact { height: auto; color: #d0b58c; }
+    #status_panel {
+        height: 1fr; min-height: 4; padding: 0 1; border: round #2d3e52;
+        background: #131d29; overflow-y: auto; scrollbar-size: 1 1;
     }
-    #welcome_panel {
-        height: auto; max-height: 65%; padding: 0; margin-bottom: 1;
-        overflow-y: auto; scrollbar-size: 1 1;
-    }
-    #welcome { height: 1; color: #edf4fc; text-style: bold; }
-    #quick_hint { height: auto; color: #95a9c2; margin-bottom: 1; }
-    #primary_actions { height: 3; margin-bottom: 1; }
-    #quickstart {
-        width: 26; min-width: 24; height: 3;
-        background: #64d6b0; color: #0b2620; text-style: bold;
-    }
-    #quickstart:hover { background: #8ce8ca; }
-    #quickstart:disabled { background: #233d37; color: #80958e; }
-    #advanced_toggle { width: 29; height: 3; margin-left: 1; background: #17212e; }
-    #nav_home, #nav_quick, #advanced, #sequence, #run_all { display: none; }
-    #payment_notice_compact {
-        height: auto; color: #ceb58e; padding-left: 1;
-        border-left: solid #806542;
-    }
-    #workflow_actions {
-        display: none; height: auto; margin-top: 1; padding-top: 1;
-        border-top: solid #253345;
-    }
+    #status_heading { height: 1; }
+    .section { height: 1; color: #71d9ba; text-style: bold; }
+    #status_heading .section { width: 1fr; }
+    #elapsed { width: auto; height: 1; color: #758ba5; }
+    #state { height: auto; margin-top: 1; color: #f0f4fa; text-style: bold; }
+    #message { height: auto; color: #acbed3; }
+    #step_result { height: auto; color: #9cd3b9; }
+    #review_checklist { display: none; height: auto; margin-top: 1; color: #d0b58c; }
+    #activity { height: auto; color: #758ba5; }
+    #offers_title { display: none; color: #95a9c2; text-style: bold; margin-top: 1; }
+    #offer_view { display: none; height: 8; min-height: 4; margin-top: 1; border: round #2d3e52; background: #0e1722; }
+    #debug_log { display: none; height: 8; min-height: 3; margin-top: 1; border: round #253345; background: #0b121b; }
+    #manual { display: none; width: 100%; height: 3; }
+    #hint { display: none; }
+    #main_actions { height: 3; margin-top: 1; align-horizontal: center; }
+    #main_actions Button { width: 1fr; max-width: 56; height: 3; }
+    #quickstart, #continue_initial, #next { background: #64d6b0; color: #0b2620; text-style: bold; }
+    #quickstart:disabled, #continue_initial:disabled, #next:disabled { background: #233d37; color: #80958e; }
+    #continue_initial, #next, #stop, #finish { display: none; }
+    #main_actions #finish { width: 18; margin-right: 1; }
+    #stop { color: #e4bd7c; }
+    #secondary_actions { height: 1; margin-top: 1; }
+    #secondary_actions Button { width: auto; height: 1; min-height: 1; background: transparent; color: #9aadc5; }
+    #recheck, #offers_toggle { display: none; margin-right: 2; }
+    #advanced_toggle { margin-right: 2; }
+    #workflow_actions { display: none; height: 1fr; min-height: 0; overflow-y: auto; scrollbar-size: 1 1; }
+    #advanced_title { height: 1; text-style: bold; color: #edf4fc; margin-bottom: 1; }
     #form_row { height: auto; }
     .field { width: 1fr; min-width: 12; height: auto; }
     #step_field { margin-left: 1; }
     #mode_label, #advanced_label { height: 1; margin-bottom: 1; color: #95a9c2; }
     #mode, #step { width: 100%; margin: 0; }
     SelectCurrent { background: #17212e; border: tall #253345; }
-    #run_row { height: auto; margin-top: 1; }
-    #run { width: 25; min-width: 17; background: #244d65; color: #e5f3ff; }
-    #mode_hint { width: 1fr; height: auto; padding: 0 1; color: #95a9c2; }
-    #read_only { height: auto; color: #d0b58c; margin-top: 1; }
-    #payment_notice {
-        height: auto; margin-top: 1; padding-left: 1;
-        color: #b5c2d4; border-left: solid #806542;
-    }
-    #status_panel {
-        height: 1fr; min-height: 5; padding: 0 1;
-        border: round #2d3e52; background: #131d29;
-        overflow-y: auto; scrollbar-size: 1 1;
-    }
-    #status_heading { height: 1; }
-    #status_heading .section { width: 1fr; color: #71d9ba; }
-    #elapsed { width: auto; height: 1; color: #758ba5; }
-    #state { height: auto; margin-top: 1; color: #f0f4fa; text-style: bold; }
-    #message { height: auto; color: #acbed3; }
-    #step_result { height: auto; color: #9cd3b9; }
-    #activity { height: auto; color: #758ba5; margin-top: 1; }
-    #offers_title { display: none; color: #95a9c2; text-style: bold; margin-top: 1; }
-    #offer_view {
-        display: none; height: 8; min-height: 4; margin-top: 1;
-        border: round #2d3e52; background: #0e1722;
-    }
-    #debug_log {
-        display: none; height: 1fr; min-height: 3; margin-top: 1;
-        border: round #253345; background: #0b121b;
-    }
-    #manual { display: none; width: 100%; height: 3; }
-    #hint { display: none; }
-    #transaction_actions { height: auto; }
-    #next, #stop { display: none; width: 1fr; height: 3; margin-top: 1; }
-    #next { background: #244d65; }
-    #stop { color: #e4bd7c; }
-    #toolbar {
-        height: 1; margin-top: 1; layout: grid;
-        grid-size: 4; grid-columns: 15 29 26 1fr; grid-rows: 1;
-    }
-    #toolbar Button {
-        width: 100%; height: 1; min-height: 1; border: none; padding: 0;
-        background: transparent; color: #9aadc5;
-    }
+    #sequence_preview { display: none; height: auto; margin-top: 1; color: #95a9c2; }
+    #mode_hint, #read_only, #payment_notice { height: auto; margin-top: 1; color: #d0b58c; }
+    #advanced_run_actions { display: none; height: 3; margin-top: 1; }
+    #run { width: 100%; height: 3; background: #244d65; color: #e5f3ff; }
+    #sequence, #run_all { display: none; }
+    Screen.advanced-view #workflow_actions, Screen.advanced-view #advanced_run_actions { display: block; }
+    Screen.advanced-view #welcome_panel, Screen.advanced-view #status_panel,
+    Screen.advanced-view #main_actions, Screen.advanced-view #recheck, Screen.advanced-view #offers_toggle { display: none; }
+    #toolbar { height: 1; margin-top: 1; layout: grid; grid-size: 4; grid-columns: 15 29 26 1fr; grid-rows: 1; }
+    #toolbar Button { width: 100%; height: 1; min-height: 1; border: none; padding: 0; background: transparent; color: #9aadc5; }
     #toolbar Button:hover, #toolbar Button:focus { background: #243247; color: #e3edf8; }
     #toolbar Button:disabled { color: #52647c; }
     #update_bar { height: 1; margin-top: 1; }
     #update_status { width: 1fr; height: 1; color: #758ba5; }
-    #update {
-        width: 22; height: 1; min-height: 1; border: none;
-        background: #202c3a; color: #a8bed4;
-    }
+    #update { width: 22; height: 1; min-height: 1; background: #202c3a; color: #a8bed4; }
     #update_bar.available #update { background: #244d44; color: #8ee8c7; }
     #update_bar.available #update_status { color: #8ee8c7; }
     #credit { height: 1; margin-top: 1; }
-    #credit Static { width: auto; height: 1; color: #687d97; }
-    #credit Link { width: auto; height: 1; color: #8ca1bb; }
+    #credit Static, #credit Link { width: auto; height: 1; color: #8ca1bb; }
     Screen.compact #screen { padding: 0 1; }
-    Screen.compact #brand { height: 1; }
+    Screen.compact #brand, Screen.compact #controls, Screen.compact .workflow-step { height: 1; }
+    Screen.compact .workflow-step { border: none; }
     Screen.compact #details { height: 2; margin: 0; }
-    Screen.compact #device, Screen.compact #account { height: 2; padding: 0 1; }
-    Screen.compact #quick_hint, Screen.compact #hint { display: none; }
-    Screen.compact #primary_actions { margin-bottom: 0; }
-    Screen.compact #welcome_panel { max-height: 60%; }
+    Screen.compact #device, Screen.compact #account { height: 2; }
+    Screen.compact #quick_hint { display: none; }
+    Screen.compact #welcome_panel { margin-bottom: 0; }
     Screen.compact #state { margin-top: 0; }
-    Screen.compact #activity { margin-top: 0; }
-    Screen.compact #toolbar, Screen.compact #update_bar, Screen.compact #credit { margin: 0; }
-    Screen.compact .workflow-step { height: 1; }
-    Screen.compact #controls { padding-top: 0; }
-    Screen.compact.session-active #welcome_panel { display: none; }
-    Screen.narrow #controls { display: none; }
-    Screen.narrow #toolbar { grid-size: 2; grid-columns: 1fr 1fr; grid-rows: 1 1; height: 2; }
-    Screen.narrow #toolbar Button { width: 100%; padding: 0; }
-    Screen.narrow #results { margin-left: 0; }
-    Screen.tiny #screen { padding: 0 1; }
-    Screen.tiny #support_label { display: none; }
-    Screen.tiny #toolbar { layout: grid; grid-size: 2; grid-rows: 1 1; height: 2; }
-    Screen.tiny #toolbar Button { width: 100%; }
-    Screen.tiny #form_row, Screen.tiny #run_row { layout: vertical; }
+    Screen.compact #toolbar, Screen.compact #update_bar, Screen.compact #credit,
+    Screen.compact #main_actions, Screen.compact #secondary_actions { margin: 0; }
+    Screen.tiny #toolbar { grid-size: 2; grid-columns: 1fr 1fr; grid-rows: 1 1; height: 2; }
+    Screen.tiny #support_label, Screen.tiny #credit { display: none; }
+    Screen.tiny #form_row { layout: vertical; }
     Screen.tiny #step_field { margin: 1 0 0 0; }
-    Screen.tiny #run { width: 100%; }
-    Screen.tiny #mode_hint { padding: 1 0 0 0; }
-    Screen.tiny #credit { display: none; }
-    Screen.micro #welcome { display: none; }
-    Screen.micro #primary_actions { layout: vertical; height: 2; }
-    Screen.micro #quickstart, Screen.micro #advanced_toggle {
-        width: 100%; height: 1; min-height: 1; margin: 0;
-    }
+    Screen.micro #controls { display: none; }
+    Screen.micro #main_actions { height: auto; layout: vertical; }
+    Screen.micro #main_actions Button { height: 1; min-height: 1; width: 100%; max-width: 100%; margin: 0; }
     """
 
     def __init__(self, *, repo: Path, selected_step: int = 1,
@@ -260,88 +240,79 @@ class GoogleAITUI(App[None]):
         self._started_at: float | None = None
         self._last_activity_at: float | None = None
         self.advanced_visible = False
-        self._last_mode = "single"
+        self._last_mode = ""
+        self._initial_ready = False
+        self._check_listed = False
+        self._offers_visible = False
+        self._wizard_blocker = ""
 
     def compose(self) -> ComposeResult:
         with Vertical(id="screen"):
             with Horizontal(id="brand"):
                 yield Static("[bold]ePlus AI Toolkit[/bold]  [dim]/ ePlus.DEV[/dim]", id="brand_title")
                 yield Static("Support: ", id="support_label")
-                yield Link("Telegram ↗", url="https://t.me/eplus_news",
-                           tooltip="Telegram support channel", id="support_link")
+                yield Link("Telegram ↗", url="https://t.me/eplus_news", tooltip="Telegram support channel", id="support_link")
+            with Horizontal(id="controls"):
+                for stage in STAGES:
+                    yield Static(f"○ {self._stage_label(stage.number)}", id=f"stage_{stage.number}", classes="workflow-step")
             with Horizontal(id="details"):
-                yield Static("ANDROID DEVICE\nMuMu • Auto-detect", id="device")
+                yield Static("ANDROID DEVICE\nNot checked · MuMu", id="device")
                 yield Static("GOOGLE ACCOUNT\nNot checked", id="account")
-            with Horizontal(id="content"):
-                with Vertical(id="controls"):
-                    yield Static("WORKFLOW", classes="section")
-                    with Vertical(id="workflow"):
-                        yield Static("Inspect first", classes="workflow-note")
-                        for stage in STAGES:
-                            if stage.number == 2:
-                                yield Static("Checkout · confirm", classes="workflow-note")
-                            item = Static(f"○  {stage.number}. {self._stage_label(stage.number)}",
-                                          id=f"stage_{stage.number}", classes="workflow-step")
-                            item.tooltip = stage.label
-                            yield item
+            with Vertical(id="content"):
                 with Vertical(id="results"):
                     with Vertical(id="welcome_panel"):
-                        yield Static("Start with your device & offers", id="welcome")
-                        yield Static("Check the Android connection and available offers without opening checkout.", id="quick_hint")
-                        with Horizontal(id="primary_actions"):
-                            yield Button("Check Device & Offers", id="quickstart", variant="success")
-                            yield Button("Advanced: Run by step  +", id="advanced_toggle")
+                        yield Static("Start: check your device & offers", id="welcome")
+                        yield Static("One step at a time. Begin with the check below; no checkout is opened.", id="quick_hint")
+                        yield Static("", id="wizard_summary", markup=False)
+                        yield Static("Steps 2–5 may charge money. Confirm each stage in Google Play.", id="payment_notice_compact")
+                    with Vertical(id="workflow_actions"):
+                        yield Static("Advanced: Run by step", id="advanced_title")
+                        with Horizontal(id="form_row"):
+                            with Vertical(classes="field", id="mode_field"):
+                                yield Static("Run mode", id="mode_label")
+                                yield Select([("One step only", "single"), ("From selected step", "from"),
+                                              ("All: Steps 2–5", "all")], value="single", id="mode", allow_blank=False)
+                            with Vertical(classes="field", id="step_field"):
+                                yield Static("Step", id="advanced_label")
+                                yield Select([(f"{stage.number}. {stage.label}", stage.number) for stage in STAGES],
+                                             value=self.initial_step, id="step", allow_blank=False)
+                        yield Static("", id="sequence_preview")
+                        yield Static("Runs one step; no next step is automatic.", id="mode_hint")
+                        yield Static("Steps 2–5 can open checkout and require confirmation.", id="read_only")
                         yield Static(
-                            "Steps 2–5 may charge money. Review Google Play terms.\n"
-                            "3 separate US$1 checks (not one US$3); 24 months not guaranteed.",
-                            id="payment_notice_compact",
-                        )
-                        with Vertical(id="workflow_actions"):
-                            with Horizontal(id="form_row"):
-                                with Vertical(classes="field", id="mode_field"):
-                                    yield Static("Run mode", id="mode_label")
-                                    yield Select([
-                                        ("One step only", "single"),
-                                        ("From selected step", "from"),
-                                        ("All: Steps 2–5", "all"),
-                                    ], value="single", id="mode", allow_blank=False)
-                                with Vertical(classes="field", id="step_field"):
-                                    yield Static("Step", id="advanced_label")
-                                    yield Select(
-                                        [(f"{stage.number}. {stage.label}", stage.number)
-                                         for stage in STAGES],
-                                        value=self.initial_step, id="step", allow_blank=False)
-                            with Horizontal(id="run_row"):
-                                yield Button("Run selected step", id="run", variant="primary")
-                                yield Static("Runs one step; no next step is automatic.", id="mode_hint")
-                            yield Button("Run sequence from step", id="sequence")
-                            yield Button("Run all", id="run_all")
-                            yield Static("Steps 2–5 can open checkout and require confirmation.", id="read_only")
-                            yield Static(
-                                "24-month example: Step 2 (12 months) + Step 3 (6) + Step 4 (6).\n"
-                                "Have at least US$3 available: 3 separate US$1 card checks, "
-                                "not one US$3 payment.\n"
-                                "These may be temporary holds. Verify each step in Google Play; "
-                                "24 months is not guaranteed.",
-                                id="payment_notice",
-                            )
+                            "24-month example: Step 2 (12 months) + Step 3 (6) + Step 4 (6).\n"
+                            "Have at least US$3 available: 3 separate US$1 card checks, not one US$3 payment.\n"
+                            "These may be temporary holds. Verify each step in Google Play; 24 months is not guaranteed.",
+                            id="payment_notice")
+                        yield Button("Run sequence from step", id="sequence")
+                        yield Button("Run all", id="run_all")
+                    with Horizontal(id="advanced_run_actions"):
+                        yield Button("Run selected step", id="run", variant="primary")
                     with Vertical(id="status_panel"):
                         with Horizontal(id="status_heading"):
                             yield Static("LIVE STATUS", classes="section")
                             yield Static("Elapsed: --", id="elapsed")
                         yield Static("Ready — no check started", id="state")
-                        yield Static("Check your device and offers to begin.", id="message")
+                        yield Static("Press Check Device & Offers to begin.", id="message")
                         yield Static("", id="step_result")
+                        yield Static("Verify in Google Play: account, charges/holds, subscription and renewal date.\n"
+                                     "A submitted checkout is not a verified activation or extension.", id="review_checklist")
                         yield Static("AVAILABLE OFFERS · FIRST PHASE ONLY", id="offers_title")
                         yield RichLog(id="offer_view", wrap=True, highlight=False, markup=False)
                         yield Static("Waiting for your action.", id="activity")
                         yield Button("Completed action on Android", id="manual", disabled=True)
                         yield RichLog(id="debug_log", wrap=True, highlight=False, markup=False)
-                        yield Static("Review Google Play pricing and renewal terms "
-                                     "before each checkout.", id="hint")
-                    with Horizontal(id="transaction_actions"):
+                        yield Static("", id="hint")
+                    with Horizontal(id="main_actions"):
+                        yield Button("Check Device & Offers", id="quickstart", variant="success")
+                        yield Button("Continue: 12-month stage →", id="continue_initial", disabled=True)
+                        yield Button("Finish here", id="finish", disabled=True)
                         yield Button("Verified in Google Play → Next", id="next", disabled=True)
                         yield Button("Stop after current step", id="stop", disabled=True)
+            with Horizontal(id="secondary_actions"):
+                yield Button("Advanced: Run by step →", id="advanced_toggle")
+                yield Button("Check again", id="recheck")
+                yield Button("View offers", id="offers_toggle")
             with Horizontal(id="toolbar"):
                 yield Button("Help & Guide", id="nav_help")
                 yield Button("Diagnose Android connection", id="diagnose")
@@ -352,26 +323,27 @@ class GoogleAITUI(App[None]):
                 yield Button("Check for updates", id="update", disabled=True)
             with Horizontal(id="credit"):
                 yield Static("Original ")
-                yield Link("@gylive", url="https://github.com/gylive",
-                           tooltip="Original author on GitHub", id="original_author")
+                yield Link("@gylive", url="https://github.com/gylive", tooltip="Original author on GitHub", id="original_author")
                 yield Static("   ·   Maintained ")
-                yield Link("@hoangsvit", url="https://github.com/hoangsvit",
-                           tooltip="Maintainer on GitHub", id="maintainer")
+                yield Link("@hoangsvit", url="https://github.com/hoangsvit", tooltip="Maintainer on GitHub", id="maintainer")
         yield Footer()
 
     @staticmethod
     def _stage_label(step: int) -> str:
-        return {4: "Pro +6 months #2", 5: "Optional +6"}.get(step, STAGES[step].label)
+        return {0: "Environment", 1: "Check", 2: "12 months", 3: "+6 months",
+                4: "+6 #2", 5: "Optional +6"}[step]
 
     def on_resize(self, event) -> None:
-        self.screen.set_class(event.size.height < 27, "compact")
-        self.screen.set_class(event.size.width < 90, "narrow")
-        self.screen.set_class(event.size.width < 62, "tiny")
-        self.screen.set_class(event.size.width < 58, "micro")
+        self.screen_stack[0].set_class(event.size.height < 27, "compact")
+        self.screen_stack[0].set_class(event.size.width < 90, "narrow")
+        self.screen_stack[0].set_class(event.size.width < 62, "tiny")
+        self.screen_stack[0].set_class(event.size.width < 58, "micro")
         self._refresh_toolbar_labels()
+        if self.is_mounted and self.query("#main_actions"):
+            self._render_wizard()
 
     def _refresh_toolbar_labels(self) -> None:
-        if not self.is_mounted:
+        if not self.is_mounted or not self.query("#diagnose"):
             return
         self.query_one("#diagnose", Button).label = (
             "Diagnose Android" if self.size.width < 62 else "Diagnose Android connection"
@@ -380,6 +352,103 @@ class GoogleAITUI(App[None]):
             ("Hide details" if self.debug_visible else "Show details") if self.size.width < 58
             else ("Hide technical details" if self.debug_visible else "Show technical details")
         )
+        self.query_one("#advanced_toggle", Button).label = (
+            ("← Guided flow" if self.advanced_visible else "Advanced →") if self.size.width < 62
+            else ("← Back to guided flow" if self.advanced_visible else "Advanced: Run by step →")
+        )
+        self.query_one("#offers_toggle", Button).label = (
+            "Hide offers" if self._offers_visible else ("Offers" if self.size.width < 62 else "View offers")
+        )
+
+    def _render_wizard(self) -> None:
+        """Present the one meaningful next action; never run it automatically."""
+        locked = self.busy or self._diagnosing or self._updating or self._approval_pending
+        review = bool(self.sequence and self.current_step is not None and self.current_step < 5
+                      and self._last_outcome and self._last_outcome.can_review and not self._stop_after_step)
+        paid_result = bool(self.current_step is not None and self.current_step >= 2 and self._last_outcome)
+        self.query_one("#quickstart", Button).display = not self.busy and not review and not self._initial_ready
+        self.query_one("#continue_initial", Button).display = self._initial_ready and not self.busy and not review
+        self.query_one("#continue_initial", Button).disabled = locked or not self._initial_ready or self.sequence
+        self.query_one("#quickstart", Button).disabled = locked or self.sequence
+        self.query_one("#next", Button).display = review and not self.busy
+        self.query_one("#next", Button).disabled = locked or not review
+        self.query_one("#finish", Button).display = review and not self.busy
+        self.query_one("#finish", Button).disabled = locked or not review
+        self.query_one("#recheck", Button).display = self._check_listed and not review and not self.advanced_visible
+        self.query_one("#recheck", Button).disabled = locked or self.sequence
+        self.query_one("#offers_toggle", Button).display = self._check_listed and not review and not self.advanced_visible
+        self.query_one("#offers_toggle", Button).disabled = locked or self.sequence
+        self.query_one("#advanced_toggle", Button).disabled = locked or self.sequence
+        self.query_one("#diagnose", Button).disabled = locked or self.sequence
+        for selector in ("#run", "#sequence", "#run_all", "#mode"):
+            self.query_one(selector).disabled = locked or self.sequence
+        self.query_one("#step", Select).disabled = locked or self.sequence or self.query_one("#mode", Select).value == "all"
+        self.query_one("#review_checklist", Static).display = paid_result and not self.busy
+        title, summary = "Start: check your device & offers", self._wizard_blocker
+        if self.busy and self.current_step is not None:
+            title = f"Running Step {self.current_step} · {STAGES[self.current_step].label}"
+            summary = "Wait for the current step. No later stage starts automatically."
+        elif review:
+            next_step = self.current_step + 1
+            title = ("Review Step 4 · Step 5 is optional" if next_step == 5
+                     else f"Verify Step {self.current_step} in Google Play → Next: Step {next_step}")
+            summary = ("Step 5 is optional. Finish here, or verify and review Step 5."
+                       if next_step == 5 else f"Next after your verification: Step {next_step} · {STAGES[next_step].label}.")
+        elif self._initial_ready:
+            title = "Check complete · next: the 12-month stage"
+            summary = "Matching offer found and Play account identified. Eligibility and renewal terms remain unverified."
+            self._set_workflow(2, "current")
+        elif paid_result:
+            title = "Review the actual outcome in Google Play"
+        self.query_one("#welcome", Static).update(title)
+        if self.busy:
+            hint = "Follow any Android prompts. No later stage starts automatically."
+        elif paid_result:
+            hint = "Review the actual subscription, charges and renewal date in Google Play."
+        elif self._initial_ready:
+            hint = "Review the initial stage before any checkout. You will approve it separately."
+        else:
+            hint = "One step at a time. Start with the check; verify each later checkout in Google Play."
+        self.query_one("#quick_hint", Static).update(hint)
+        self.query_one("#wizard_summary", Static).update(summary)
+        self.query_one("#wizard_summary", Static).display = bool(summary) and not (
+            self.size.height < 27 or self.size.width < 62
+        )
+        self.refresh_bindings()
+
+    @on(Button.Pressed, "#continue_initial")
+    def continue_initial_pressed(self) -> None:
+        if (not self._initial_ready or self.busy or self._diagnosing or self._updating
+                or self._approval_pending or self.sequence or self.advanced_visible):
+            return
+        self._confirm_stage(2, True)
+
+    @on(Button.Pressed, "#recheck")
+    def recheck_pressed(self) -> None:
+        if self.busy or self._diagnosing or self._updating or self._approval_pending or self.sequence or self.advanced_visible:
+            return
+        self._confirm_stage(1, False)
+
+    @on(Button.Pressed, "#offers_toggle")
+    def offers_pressed(self) -> None:
+        if not self._check_listed or self.busy or self.advanced_visible:
+            return
+        self._offers_visible = not self._offers_visible
+        self.query_one("#offers_title", Static).display = self._offers_visible
+        self.query_one("#offer_view", RichLog).display = self._offers_visible
+        self._refresh_toolbar_labels()
+
+    @on(Button.Pressed, "#finish")
+    def finish_pressed(self) -> None:
+        if self.busy or self._diagnosing or self._updating or self._approval_pending or not self.sequence:
+            return
+        self.sequence = False
+        self._stop_after_step = True
+        self._initial_ready = False
+        self._set_message("Sequence ended here. No later stage was started. Verify the actual subscription and charges in Google Play.")
+        self.screen_stack[0].remove_class("session-active")
+        self._render_wizard()
+        self._refresh_update_controls()
 
     @on(Button.Pressed, "#nav_home")
     def home_pressed(self) -> None:
@@ -392,14 +461,27 @@ class GoogleAITUI(App[None]):
 
     @on(Button.Pressed, "#nav_help")
     def help_pressed(self) -> None:
-        self._set_message("Start with a read-only offer check. Steps 2-5 can request "
-                          "real payments; verify the account, terms and renewal date.")
+        if isinstance(self.screen, HelpScreen):
+            return
+        self.push_screen(HelpScreen())
 
     @on(Button.Pressed, "#diagnose")
     def diagnose_pressed(self) -> None:
-        if self.busy or self._diagnosing or self._updating or self._approval_pending:
+        if self.busy or self._diagnosing or self._updating or self._approval_pending or self.sequence:
             return
         self._diagnosing = True
+        if self._initial_ready:
+            self._set_workflow(2, "pending")
+        self._initial_ready = False
+        self._check_listed = False
+        self._offers_visible = False
+        self.query_one("#offers_title", Static).display = False
+        self.query_one("#offer_view", RichLog).display = False
+        self._wizard_blocker = "Run a fresh offer check after connection diagnostics."
+        self.current_step = None
+        self._last_outcome = None
+        self._show_advanced(False)
+        self._render_wizard()
         self._refresh_update_controls()
         self.query_one("#diagnose", Button).disabled = True
         self.query_one("#quickstart", Button).disabled = True
@@ -433,6 +515,7 @@ class GoogleAITUI(App[None]):
         self.query_one("#step_result", Static).update("\n".join(diagnosis.details))
         self.query_one("#offers_title", Static).display = False
         self.query_one("#offer_view", RichLog).display = False
+        self._render_wizard()
 
     def on_mount(self) -> None:
         self.set_interval(1, self._refresh_elapsed)
@@ -450,6 +533,8 @@ class GoogleAITUI(App[None]):
         if self.start_sequence:
             self.query_one("#mode", Select).value = "from"
         self._update_run_mode()
+        self._set_workflow(1, "current")
+        self._render_wizard()
         self.query_one("#quickstart", Button).focus()
 
     def _refresh_update_controls(self) -> None:
@@ -493,6 +578,7 @@ class GoogleAITUI(App[None]):
             self._begin_update_check()
             return
         self._updating = True
+        self._render_wizard()
         self._refresh_update_controls()
         for selector in ("#quickstart", "#diagnose", "#run", "#sequence", "#run_all",
                          "#mode", "#step", "#advanced_toggle", "#exit"):
@@ -524,16 +610,29 @@ class GoogleAITUI(App[None]):
             self.query_one(selector).disabled = False
         self._update_run_mode()
         self._set_message(error)
+        self._render_wizard()
 
     @on(Button.Pressed, "#advanced_toggle")
     def advanced_pressed(self) -> None:
-        self.advanced_visible = not self.advanced_visible
-        panel = self.query_one("#workflow_actions", Vertical)
-        panel.display = self.advanced_visible
+        if self.busy or self._diagnosing or self._updating or self._approval_pending or self.sequence:
+            return
+        self._show_advanced(not self.advanced_visible)
+        self._update_run_mode()
+        if self.advanced_visible:
+            self.query_one("#mode", Select).focus()
+        else:
+            self.query_one("#continue_initial" if self._initial_ready else "#quickstart", Button).focus()
+
+    def _show_advanced(self, visible: bool) -> None:
+        self.advanced_visible = visible
+        self.screen_stack[0].set_class(visible, "advanced-view")
+        self.query_one("#workflow_actions").display = visible
         self.query_one("#advanced_toggle", Button).label = (
-            "Hide advanced steps  −" if self.advanced_visible
-            else "Advanced: Run by step  +"
+            "← Back to guided flow" if visible else "Advanced: Run by step →"
         )
+        self._refresh_toolbar_labels()
+        self.refresh_bindings()
+        self._render_wizard()
 
     @on(Select.Changed, "#mode")
     def mode_changed(self, event: Select.Changed) -> None:
@@ -544,30 +643,46 @@ class GoogleAITUI(App[None]):
         self._update_run_mode()
 
     def _update_run_mode(self) -> None:
-        if self.busy or self._diagnosing or self._updating:
+        if self.busy or self._diagnosing or self._updating or not self.query("#mode"):
             return
         mode = self.query_one("#mode", Select).value
-        step = self.query_one("#step", Select).value
+        selector = self.query_one("#step", Select)
+        step = selector.value
+        if mode != self._last_mode:
+            self._last_mode = str(mode)
+            stages = STAGES if mode == "single" else STAGES[2:]
+            selector.set_options([(f"{stage.number}. {stage.label}", stage.number) for stage in stages])
+            selector.value = step if step in [stage.number for stage in stages] else stages[0].number
         if mode == "all":
-            self.query_one("#step", Select).disabled = True
+            selector.value = 2
+        step = selector.value
+        self.query_one("#step_field").display = mode != "all"
+        self.query_one("#sequence_preview", Static).display = mode != "single"
+        if mode == "all":
+            selector.disabled = True
             self.query_one("#run", Button).label = "Run all: Steps 2-5"
             hint = "Starts Step 2; requires review before every later checkout."
         elif mode == "from":
-            self.query_one("#step", Select).disabled = False
+            selector.disabled = False
             self.query_one("#run", Button).label = "Run from selected step"
             hint = ("Choose Step 2-5. Each later checkout requires verification."
                     if step in (0, 1) else "Continue from this step; verify each checkout before Next.")
         else:
-            self.query_one("#step", Select).disabled = False
+            selector.disabled = False
             self.query_one("#run", Button).label = "Run selected step"
-            hint = "Run only this step. Steps 2-5 can request real payment."
+            hint = f"Run only Step {step}. No later step is automatic. Steps 2–5 may charge money."
         self.query_one("#mode_hint", Static).update(hint)
+        if mode != "single" and isinstance(step, int):
+            path = " → ".join(str(number) for number in range(step, 5))
+            self.query_one("#sequence_preview", Static).update(
+                f"Planned stages: {path + ' → ' if path else ''}5 (optional). Confirm and verify each stage separately."
+            )
 
     def action_toggle_advanced(self) -> None:
         self.advanced_pressed()
 
     def _refresh_elapsed(self) -> None:
-        if not self.busy or self._started_at is None:
+        if not self.busy or self._started_at is None or not self.is_running or not self.query("#elapsed"):
             return
         elapsed = int(time.monotonic() - self._started_at)
         self.query_one("#elapsed", Static).update(f"Elapsed: {elapsed // 60:02d}:{elapsed % 60:02d}")
@@ -579,10 +694,13 @@ class GoogleAITUI(App[None]):
                 )
 
     def _set_workflow(self, step: int, state: str) -> None:
-        marker = {"running": "●", "done": "✓", "review": "!"}.get(state, "○")
-        self.query_one(f"#stage_{step}", Static).set_classes(f"workflow-step {state}")
-        self.query_one(f"#stage_{step}", Static).update(
-            f"{marker}  {step}. {self._stage_label(step)}"
+        marker = {"running": "●", "done": "✓", "review": "!", "reviewed": "·"}.get(state, "○")
+        widget = self.query_one(f"#stage_{step}", Static)
+        widget.set_classes(f"workflow-step {state}")
+        widget.tooltip = ("Reviewed in Google Play by you; outcome not independently verified."
+                          if state == "reviewed" else STAGES[step].label)
+        widget.update(
+            f"{marker} {self._stage_label(step)}"
         )
 
     def _set_message(self, value: str) -> None:
@@ -597,6 +715,8 @@ class GoogleAITUI(App[None]):
     def _confirm_stage(self, step: int, sequence: bool,
                        previous_verified: bool = False) -> None:
         if self.busy or self._diagnosing or self._updating or self._approval_pending:
+            return
+        if self.sequence and self._last_outcome and self._last_outcome.can_review and not previous_verified:
             return
         if step == 2:
             title = "Start initial 12-month checkout?"
@@ -629,22 +749,29 @@ class GoogleAITUI(App[None]):
                        "subscription/renewal date. " + message)
         self._approval_pending = True
         self._refresh_update_controls()
+        self._render_wizard()
 
         def confirmed(approved: bool) -> None:
             self._approval_pending = False
             self._refresh_update_controls()
+            self._render_wizard()
             if approved:
+                if previous_verified and self.current_step is not None:
+                    self._set_workflow(self.current_step, "reviewed")
                 self._start(step, sequence)
 
         self.push_screen(Approval(title, message), confirmed)
 
     @on(Button.Pressed, "#quickstart")
     def quickstart_pressed(self) -> None:
+        if self.advanced_visible or self._initial_ready or self.sequence:
+            return
         self._confirm_stage(1, False)
 
     @on(Button.Pressed, "#run")
     def selected_pressed(self) -> None:
-        if self.busy or self._diagnosing or self._updating or self._approval_pending:
+        if (not self.advanced_visible or self.busy or self._diagnosing or self._updating
+                or self._approval_pending or self.sequence):
             return
         mode = self.query_one("#mode", Select).value
         if mode == "all":
@@ -660,6 +787,8 @@ class GoogleAITUI(App[None]):
 
     @on(Button.Pressed, "#sequence")
     def sequence_pressed(self) -> None:
+        if not self.advanced_visible or self.busy or self._diagnosing or self._updating or self._approval_pending or self.sequence:
+            return
         step = self._selected()
         if step < 2:
             self._set_message("Choose Step 2, 3, 4 or 5 to start the subscription sequence.")
@@ -668,7 +797,8 @@ class GoogleAITUI(App[None]):
 
     @on(Button.Pressed, "#next")
     def next_pressed(self) -> None:
-        if self.busy or self._updating or not self.sequence or self.current_step is None:
+        if (self.busy or self._diagnosing or self._updating or self._approval_pending
+                or not self.sequence or self.current_step is None):
             return
         if self._last_outcome is None or not self._last_outcome.can_review:
             return
@@ -748,7 +878,15 @@ class GoogleAITUI(App[None]):
         self._refresh_toolbar_labels()
 
     def action_run_selected(self) -> None:
-        self.selected_pressed()
+        if self.advanced_visible and self.screen is self.screen_stack[0]:
+            self.selected_pressed()
+
+    def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
+        if action == "run_selected":
+            return (self.advanced_visible and not self.busy and not self._diagnosing
+                    and not self._updating and not self._approval_pending and not self.sequence
+                    and self.screen is self.screen_stack[0])
+        return super().check_action(action, parameters)
 
     def action_quit(self) -> None:
         self.action_quit_safely()
@@ -775,7 +913,14 @@ class GoogleAITUI(App[None]):
             return
         self.busy = True
         self.sequence = sequence
-        self.screen.add_class("session-active")
+        if self._initial_ready:
+            self._set_workflow(2, "pending")
+        self._initial_ready = False
+        self._check_listed = False
+        self._offers_visible = False
+        self._wizard_blocker = ""
+        self._show_advanced(False)
+        self.screen_stack[0].add_class("session-active")
         self._refresh_update_controls()
         self.current_step = step
         self._stop_after_step = False
@@ -821,6 +966,10 @@ class GoogleAITUI(App[None]):
             else "Running — check MuMu if prompted"
         )
         self._set_message("Preparing tools and checking Google Play. Missing dependencies are installed automatically.")
+        if step == 1:
+            for number in range(2, 6):
+                self._set_workflow(number, "pending")
+        self._render_wizard()
         self.run_stage(step)
 
     def _execute(self, command: list[str]) -> int:
@@ -968,15 +1117,23 @@ class GoogleAITUI(App[None]):
                 instruction = f"{instruction}  Last CLI message: {diagnostic}"
         self._set_message(instruction)
         if step == 1:
+            self._wizard_blocker = initial_checkout_blocker(outcome, report, self._verified_account)
+            self._initial_ready = not self._wizard_blocker
+            self._check_listed = bool(outcome.code == "listed" and isinstance(report, dict) and report.get("status") == "listed")
+            self._set_workflow(1, "done" if self._initial_ready else "review")
+            if outcome.code == "listed" and self._wizard_blocker:
+                self._set_status("Offer check needs attention")
+                self._set_message(self._wizard_blocker)
             self.query_one("#step_result", Static).update(report_summary(report))
-            if isinstance(report, dict):
+            if self._check_listed:
+                self.query_one("#device", Static).update("ANDROID DEVICE\nQueried for this offer check")
                 offer_view = self.query_one("#offer_view", RichLog)
                 offer_view.clear()
                 for item in offer_explorer_lines(report):
                     offer_view.write(item)
-                offer_view.display = True
-                self.query_one("#offers_title", Static).display = True
-            if self.macos_mode and isinstance(report, dict):
+                offer_view.display = False
+                self.query_one("#offers_title", Static).display = False
+            if isinstance(report, dict):
                 detected = report.get("detected_play_account")
                 if isinstance(detected, str) and detected:
                     self.query_one("#account", Static).update(
@@ -989,8 +1146,12 @@ class GoogleAITUI(App[None]):
             self.query_one("#next", Button).disabled = True
             self.query_one("#next", Button).display = False
             self.sequence = False
-        self.screen.set_class(self.sequence, "session-active")
+        self.screen_stack[0].set_class(self.sequence, "session-active")
+        self._render_wizard()
         self._refresh_update_controls()
+        if not self._exit_after_step and self.screen is self.screen_stack[0]:
+            target = "#finish" if self.sequence else ("#continue_initial" if self._initial_ready else "#quickstart")
+            self.query_one(target, Button).focus()
         if self._exit_after_step:
             self.exit()
             return

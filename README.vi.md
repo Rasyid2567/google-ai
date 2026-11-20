@@ -3,7 +3,7 @@
 [![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?logo=telegram&logoColor=white)](https://t.me/eplus_news)
 [![X](https://img.shields.io/badge/X-%23000000.svg?logo=X&logoColor=white)](https://x.com/david_nguyen94)
 
-<!-- Source README.md git-blob: 4d5b9e38e9d9539b40ee961e3c5d10e4ced75af5 -->
+<!-- Source README.md git-blob: 6bce0f2c938cf251470668940a6d345e3ce77281 -->
 
 [English](README.md) · **Tiếng Việt** · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md)
 
@@ -121,11 +121,13 @@ Trên bảng điều khiển có hai chức năng kiểm tra được phát tri�
 
 ## 3. Sử dụng giao diện
 
-Giao diện mới đặt thông tin thiết bị và tài khoản ở trên, danh sách bước gọn ở bên trái khi cửa sổ đủ rộng, cùng nút **Check Device & Offers** cạnh **Advanced: Run by step**. **Live Status** có vùng riêng; trợ giúp, chẩn đoán kết nối, thông tin kỹ thuật và cập nhật nằm phía dưới. Với cửa sổ nhỏ, thanh bên được ẩn; khi chạy bước, giao diện ưu tiên vùng theo dõi để luôn thấy Stop/Next. Cảnh báo thanh toán ngắn hiện sẵn trước khi chạy; mở **Advanced: Run by step** để đọc đầy đủ ví dụ ba lần kiểm tra thẻ. Hộp xác nhận cho phép cuộn nội dung dài và luôn giữ các nút **Cancel**, **Continue** trong tầm nhìn.
+Giao diện dẫn bạn đi từng bước như khi đặt hàng: bắt đầu bằng **Check Device & Offers** (Step 1). Chỉ khi lần kiểm tra mới trả về danh sách hợp lệ, nhận diện được tài khoản Play và tìm thấy đúng ưu đãi ban đầu có giá kỳ đầu bằng 0, nút **Continue: 12-month stage →** mới xuất hiện. Nút này mở phần xác nhận riêng cho Step 2; bộ xử lý vẫn kiểm tra lại tài khoản, ưu đãi và điều khoản trước khi mở thanh toán. Kết quả kiểm tra không chứng minh đủ điều kiện, được miễn phí hay đã kích hoạt gói. Sau một lần gửi yêu cầu thanh toán có kết quả cho phép xem lại, hãy đối chiếu thực tế trong Google Play rồi mới nhấn **Verified in Google Play → Next**, hoặc chọn **Finish here** để kết thúc. Step 5 là tùy chọn; không bước nào tự chạy tiếp.
+
+**Advanced: Run by step** mở màn hình cấu hình riêng có nút Run luôn nhìn thấy; **← Back to guided flow** đưa bạn về luồng chính. **From selected step** chỉ cho chọn Steps 2–5; **All: Steps 2–5** hiển thị lộ trình từ Step 2 và ẩn ô chọn bước. Phím **R** chỉ hoạt động trong màn hình này. Sau khi lấy danh sách ưu đãi thành công, nhấn **View offers** để xem Offer Explorer. Trợ giúp mở riêng và không thay nội dung kết quả đang xem.
 
 Nhấn **Check Device & Offers** để chạy **Step 1 — Available offers** và kiểm tra ưu đãi mà **không bắt đầu thanh toán**. Bạn có thể theo dõi tiến trình tại **Live Status**, chọn **Show technical details** để xem thông tin kỹ thuật và kiểm tra đúng tài khoản trong Google Play. Nếu 30 giây không có thông báo mới, công cụ sẽ cảnh báo; điều đó **chưa có nghĩa là chương trình đã bị treo**.
 
-Step 1 không mua hàng, nhưng quá trình chuẩn bị vẫn có thể tải hoặc sửa ADB/Frida và thay đổi cấu hình máy ảo hoặc mạng. **Step 0 — Environment cũng có thể thay đổi môi trường trên máy**, nên không được xem là thao tác hoàn toàn chỉ đọc. Thanh bên hiển thị sáu bước; thông tin trong Android Device và Google Account được lấy từ kết quả thực tế, đồng thời che bớt dữ liệu nhận dạng tài khoản. Những terminal có hỗ trợ liên kết sẽ cho phép mở trang của tác giả gốc và người duy trì.
+Step 1 không mua hàng, nhưng quá trình chuẩn bị vẫn có thể tải hoặc sửa ADB/Frida và thay đổi cấu hình máy ảo hoặc mạng. **Step 0 — Environment cũng có thể thay đổi môi trường trên máy**, nên không được xem là thao tác hoàn toàn chỉ đọc. Thanh tiến trình cho biết vị trí hiện tại trong luồng hướng dẫn; thông tin trong Android Device và Google Account được lấy từ kết quả thực tế, đồng thời che bớt dữ liệu nhận dạng tài khoản. Những terminal có hỗ trợ liên kết sẽ cho phép mở trang của tác giả gốc và người duy trì.
 
 Mục **Advanced: Run by step** gồm:
 

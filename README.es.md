@@ -3,7 +3,7 @@
 [![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?logo=telegram&logoColor=white)](https://t.me/eplus_news)
 [![X](https://img.shields.io/badge/X-%23000000.svg?logo=X&logoColor=white)](https://x.com/david_nguyen94)
 
-<!-- Source README.md git-blob: 4d5b9e38e9d9539b40ee961e3c5d10e4ced75af5 -->
+<!-- Source README.md git-blob: 6bce0f2c938cf251470668940a6d345e3ce77281 -->
 
 [English](README.md) · [Tiếng Việt](README.vi.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · **Español** · [Français](README.fr.md)
 
@@ -120,7 +120,9 @@ El panel incorpora dos funciones de consulta inspiradas en la configuración de 
 
 ## 3. Usar el panel Textual
 
-La nueva interfaz sitúa la información del dispositivo y la cuenta arriba, muestra una lista compacta de pasos a la izquierda en ventanas anchas y coloca **Check Device & Offers** junto a **Advanced: Run by step**. **Live Status** tiene su propio panel; la ayuda, el diagnóstico de conexión, los detalles técnicos y las actualizaciones quedan debajo. En ventanas pequeñas se oculta la lista lateral y, durante un paso, se da prioridad al estado para mantener visibles Stop/Next. Antes de ejecutar se muestra siempre un aviso breve de pago; **Advanced: Run by step** contiene el ejemplo completo de las tres verificaciones de tarjeta. Los mensajes largos de confirmación se pueden desplazar y los botones **Cancel** y **Continue** permanecen visibles.
+El panel guía paso a paso: empieza por **Check Device & Offers** (Step 1). Solo una consulta nueva y correcta, con una cuenta Play identificada y la oferta inicial correspondiente cuyo primer período tenga precio cero, muestra **Continue: 12-month stage →**. Este botón abre una confirmación independiente para Step 2; el motor vuelve a comprobar la cuenta, la oferta y las condiciones antes del pago. La consulta no demuestra elegibilidad, meses gratis ni activación. Tras una solicitud de pago con un resultado que permita revisarlo, comprueba la situación real en Google Play antes de pulsar **Verified in Google Play → Next**, o elige **Finish here** para terminar. Step 5 es opcional; ningún paso continúa automáticamente.
+
+**Advanced: Run by step** abre una vista independiente con el botón Run siempre visible; **← Back to guided flow** vuelve al flujo principal. **From selected step** solo ofrece Steps 2–5; **All: Steps 2–5** muestra la ruta desde Step 2 y oculta el selector de paso. **R** funciona únicamente en esta vista. Tras una consulta correcta, **View offers** abre Offer Explorer. La ayuda se abre aparte sin sustituir el resultado actual.
 
 Mientras se ejecuta un paso, se desactivan **Check Device & Offers**, **Run** y los controles para cambiar de modo o de paso, de modo que no se inicien varias acciones a la vez. El paso 0 puede cambiar ajustes del equipo y el paso 1, aunque no realiza compras, puede preparar ADB/Frida. Antes de continuar con **Next**, comprueba el resultado en Google Play. **Detener o cerrar la aplicación no anula un pago ya enviado.**
 

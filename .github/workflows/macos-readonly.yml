@@ -12,6 +12,7 @@ on:
       - "app_update.py"
       - "tests/test_app_update.py"
       - "tests/test_tui_layout.py"
+      - "tests/test_tui_wizard.py"
       - "tests/test_macos.py"
       - "docs/MACOS-PREVIEW.md"
       - ".github/workflows/macos-readonly.yml"
@@ -49,6 +50,7 @@ jobs:
         run: |
           python -m unittest discover -s tests -p 'test_app_update.py' -v
           python -m unittest discover -s tests -p 'test_tui_layout.py' -v
+          python -m unittest discover -s tests -p 'test_tui_wizard.py' -v
       - name: Package runnable macOS source bundle and SHA-256
         shell: bash
         run: |
