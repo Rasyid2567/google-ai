@@ -1,6 +1,6 @@
 # ePlus AI Toolkit — Tiếng Việt
 
-<!-- Source README.md git-blob: 632fec4122d7499344d2bded14883a280a04c82f -->
+<!-- Source README.md git-blob: c3e4a2e5de138f99affa260780d6b8b23310cd6a -->
 
 [English](README.md) · **Tiếng Việt** · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md)
 
@@ -255,3 +255,5 @@ Bạn cũng có thể tham khảo [cấu trúc dự án](docs/PROJECT.md), [các
 Trên Windows, chọn Step 6 trong **Advanced > One step only**, hoặc chạy `.\\run-all.ps1 -Step 6 -Email account@example.com`. Trên macOS, chọn Step 6 ở giao diện. Muốn chỉ xem thông tin gói mà không mở thanh toán, dùng `python ultra0.py --inspect-sku g1.ai.ultra.3months_ip_90p.acq`.
 
 Công cụ kiểm tra đúng SKU và các kỳ giá USD trước khi mở Google Play. **Công cụ không tự nhấn Subscribe cho gói trả phí này.** Bạn phải tự xác nhận tài khoản, số tiền từng tháng, giá gia hạn và điều kiện hủy trên Google Play. Không dùng `--force` hoặc cộng dồn token đăng ký. **Không bắt buộc MuMu 12 hay Android 12**; chỉ cần môi trường Android hiện có tương thích ADB/root/Frida và các ứng dụng Google Play cần thiết. Xem [chi tiết và cảnh báo](docs/PROMO-SKU-INSPECTION.md).
+
+**Phân nhóm:** Pro Step 2–5 là nhóm dùng thử miễn phí được báo cáo (tối đa 24 tháng, không bảo đảm); Ultra Step 6 là **nhóm trả phí**, yêu cầu **tài khoản sạch chưa từng dùng trial/ưu đãi mở đầu** theo nguồn. Bạn phải tự xác nhận điều này trước khi mở thanh toán; công cụ không thể kiểm tra lịch sử trial và Google Play quyết định điều kiện thực tế.
