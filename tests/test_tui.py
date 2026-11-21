@@ -23,9 +23,9 @@ class CoreTests(unittest.TestCase):
             self.assertTrue(needs_setup())
 
     def test_step_range(self):
-        for step in range(6):
+        for step in range(7):
             self.assertEqual(validate_step(step), step)
-        for value in (-1, 6, "2", True):
+        for value in (-1, 7, "2", True):
             with self.assertRaises(ValueError):
                 validate_step(value)
 
@@ -429,8 +429,9 @@ class TextualSmokeTests(unittest.IsolatedAsyncioTestCase):
                         self.assertEqual(notice.region.height, 0)
                         self.assertTrue(compact.display)
                         wording = str(compact.render())
-                        self.assertIn("may charge money", wording)
-                        self.assertIn("Confirm each stage in Google Play", wording)
+                        self.assertIn("Pro may need card holds", wording)
+                        self.assertIn("Ultra is paid", wording)
+                        self.assertIn("Google Play decides eligibility", wording)
                         self.assertGreater(app.query_one("#status_panel").region.height, 3)
                         self.assertLessEqual(compact.region.bottom, app.query_one("#welcome_panel").region.bottom)
                         app.advanced_pressed()
@@ -440,9 +441,9 @@ class TextualSmokeTests(unittest.IsolatedAsyncioTestCase):
                                 break
                         self.assertTrue(app.query_one("#workflow_actions").display)
                         wording = str(notice.render())
-                        for detail in ("Step 2 (12 months)", "Step 3 (6)", "Step 4 (6)",
-                                       "at least US$3 available", "3 separate US$1 card checks",
-                                       "not one US$3 payment", "temporary holds", "24 months is not guaranteed"):
+                        for detail in ("Step 2 (12)", "Step 3 (6)", "Step 4 (6)",
+                                       "Three separate US$1 checks", "not one US$3 payment",
+                                       "temporary holds", "not guaranteed", "ULTRA PAID", "CLEAN"):
                             self.assertIn(detail, wording)
                         self.assertGreater(app.query_one("#run").region.height, 0)
                     launch.assert_not_called()
