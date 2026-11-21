@@ -92,3 +92,7 @@ Optional parameters:
 ```
 
 Only use a `-Serial` observed through ADB. `-Email` constrains the account expected by the checks. `-Force` exists for compatibility but bypasses account-matching protections; **avoid using it**. It does not override Google Play payment restrictions or eligibility.
+
+## Optional Ultra 20x USD 19.99/month offer
+
+Step **6** is an independent 30 TB Ultra offer, not part of Pro Steps 2–5. See the [Ultra offer details](PROMO-SKU-INSPECTION.md) for exact pricing checks, Windows/macOS selection, and manual checkout limitations. Do not use `--force` or expect a particular MuMu or Android 12 build.
