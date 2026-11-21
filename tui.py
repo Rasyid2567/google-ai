@@ -328,7 +328,7 @@ class GoogleAITUI(App[None]):
                         with Horizontal(id="plan_groups"):
                             yield Static("PRO FREE TRIAL\nUp to 24 months · Steps 2–5", id="pro_group")
                             yield Static("ULTRA PAID · CLEAN ACCOUNT\nUS$19.99/month × 3 · Step 6", id="ultra_group")
-                        yield Static("Pro FREE (possible holds) · Ultra PAID. Check Google Play.", id="payment_notice_compact")
+                        yield Static("Pro FREE · Ultra PAID · Check Google Play.", id="payment_notice_compact")
                     with Vertical(id="workflow_actions"):
                         yield Static("Advanced: Run by step", id="advanced_title")
                         with Horizontal(id="form_row"):
