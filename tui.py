@@ -55,8 +55,7 @@ class Approval(ModalScreen[bool]):
             yield Static(self.message_text, id="approval_message")
             if self.clean_account_ack:
                 yield Checkbox(
-                    "I confirm this account has NEVER used a Google One / AI trial "
-                    "or introductory offer (self-declared; Google Play decides eligibility).",
+                    "Clean account: never used a trial or intro offer",
                     value=False, id="clean_account_ack")
             with Horizontal(id="approval_actions"):
                 yield Button("Cancel", id="cancel")
