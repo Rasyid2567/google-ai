@@ -48,15 +48,24 @@ async def capture(directory: Path) -> None:
         assert "FREE TRIAL" in str(app.query_one("#pro_group", Static).render())
         assert "PAID" in str(app.query_one("#ultra_group", Static).render())
         assert "CLEAN ACCOUNT" in str(app.query_one("#ultra_group", Static).render())
+        # New wizard from PR #58, with explicit Pro FREE vs Ultra PAID plan cards.
+        assert app.query_one("#start_ultra", Button).display
+        save_real_render(app, directory, "01-pro-free-vs-ultra-paid")
+
+        # Capture the new wizard's Advanced view, which also includes Ultra Step 6.
         app.advanced_pressed()
         await pilot.pause()
         assert app.query_one("#workflow_actions").display
         app.query_one("#mode", Select).value = "single"
         app.query_one("#step", Select).value = 6
         await pilot.pause()
-        save_real_render(app, directory, "01-pro-free-vs-ultra-paid")
+        save_real_render(app, directory, "04-new-wizard-advanced-ultra")
+        app.advanced_pressed()
+        await pilot.pause()
+        assert not app.query_one("#workflow_actions").display
 
-        # The same handler is called by the actual Run selected step control.
+        # The same handler is called by the real Ultra button.
+
         # It only opens the pre-checkout approval modal; NO CLI is run.
         app._confirm_stage(6, False)
         await pilot.pause()
@@ -82,9 +91,10 @@ def main() -> int:
     asyncio.run(capture(directory))
     (directory / "README.txt").write_text(
         "Actual Textual 8.2.8 headless terminal renders of the app from this commit.\n"
-        "01: main app shows Pro FREE and Ultra PAID as separate groups.\n"
+        "01: NEW wizard home shows Pro FREE and Ultra PAID as separate groups.\n"
         "02: Ultra approval modal, clean-account checkbox unchecked.\n"
         "03: same modal, checkbox checked but NO checkout started.\n"
+        "04: NEW wizard Advanced view, Ultra paid Step 6 selected.\n"
         "These screenshots do not depict Android / Google Play, eligibility, or billing.\n",
         encoding="utf-8",
     )
