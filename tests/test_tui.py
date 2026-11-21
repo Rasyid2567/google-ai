@@ -23,9 +23,9 @@ class CoreTests(unittest.TestCase):
             self.assertTrue(needs_setup())
 
     def test_step_range(self):
-        for step in range(6):
+        for step in range(7):
             self.assertEqual(validate_step(step), step)
-        for value in (-1, 6, "2", True):
+        for value in (-1, 7, "2", True):
             with self.assertRaises(ValueError):
                 validate_step(value)
 
