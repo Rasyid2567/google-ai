@@ -14,7 +14,7 @@ spec.loader.exec_module(app)
 
 class PromotionSkuInspectionTests(unittest.TestCase):
     def test_candidate_skus_are_fixed_and_unique(self):
-        self.assertEqual(len(app.READ_ONLY_PROMO_SKUS), 5)
+        self.assertEqual(app.READ_ONLY_PROMO_SKUS, (app.ULTRA_19_SKU,))
         self.assertEqual(len(set(app.READ_ONLY_PROMO_SKUS)), 5)
 
     def test_exact_sku_is_queried_only_in_list_mode(self):
