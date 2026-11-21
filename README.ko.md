@@ -1,6 +1,6 @@
 # ePlus AI Toolkit — 한국어
 
-<!-- Source README.md git-blob: 52a6b829e68d1c83f2ffba023a0d43364ea8b6eb -->
+<!-- Source README.md git-blob: b21c1f4be66be621b06ef1fb53746af36770d95c -->
 
 [English](README.md) · [Tiếng Việt](README.vi.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · **한국어** · [Español](README.es.md) · [Français](README.fr.md)
 
@@ -239,3 +239,7 @@ ePlus AI Toolkit 설치나 사용에 문제가 있다면 [ePlus Telegram 지원�
 **원저자:** [@gylive](https://github.com/gylive) — [google-ultra](https://github.com/gylive/google-ultra). **관리자:** [David Nguyen (@hoangsvit)](https://github.com/hoangsvit) / [ePlus.DEV](https://eplus.dev). 원본 MIT 저작권 고지는 `THIRD_PARTY_NOTICES.md`에 보존되어 있습니다.
 
 [문서 모음](docs/README.md) · [이전 한국어 참고 안내](docs/i18n/README.ko.md) · [결제 안전](docs/SAFETY.md)
+
+## 선택 기능: 프로모션 SKU 읽기 전용 확인
+
+제3자 ZIP 파일에 제시된 **검증되지 않은** Google AI Pro/Ultra 상품 ID를 CLI에서 개별적으로 조회할 수 있습니다. 예: `python ultra0.py --inspect-sku g1.play.2tb.ai`. 이 명령은 자동으로 목록 조회 모드만 사용하며 결제, 구독 기간 추가, 계정 확인 우회 옵션을 거부합니다. 대시보드 결제 단계는 변경되지 않습니다. **혜택이 표시되어도 이용 자격, 실제 요금, 구독 활성화가 확인된 것은 아닙니다.** 환경 준비 과정에서 에뮬레이터 설정이 변경될 수 있습니다. [SKU 목록과 제한 사항](docs/PROMO-SKU-INSPECTION.md)을 확인하세요.
