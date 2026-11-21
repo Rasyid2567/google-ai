@@ -250,7 +250,6 @@ class GoogleAITUI(App[None]):
     /* Preserve actionable controls on small terminals; plan choice remains
        explicit in the Pro and Ultra buttons, not in tall marketing cards. */
     Screen.compact #plan_groups, Screen.narrow #plan_groups { display: none; }
-    Screen.compact #payment_notice_compact { display: none; }
     Screen.session-active #plan_groups, Screen.session-active #payment_notice_compact { display: none; }
     Screen.compact #welcome_panel { margin-bottom: 0; }
     Screen.compact #state { margin-top: 0; }
@@ -329,7 +328,7 @@ class GoogleAITUI(App[None]):
                         with Horizontal(id="plan_groups"):
                             yield Static("PRO FREE TRIAL\nUp to 24 months · Steps 2–5", id="pro_group")
                             yield Static("ULTRA PAID · CLEAN ACCOUNT\nUS$19.99/month × 3 · Step 6", id="ultra_group")
-                        yield Static("Separate groups. Pro may need card holds; Ultra is paid. Google Play decides eligibility.", id="payment_notice_compact")
+                        yield Static("Pro FREE (possible holds) · Ultra PAID. Check Google Play.", id="payment_notice_compact")
                     with Vertical(id="workflow_actions"):
                         yield Static("Advanced: Run by step", id="advanced_title")
                         with Horizontal(id="form_row"):
@@ -340,7 +339,7 @@ class GoogleAITUI(App[None]):
                             with Vertical(classes="field", id="step_field"):
                                 yield Static("Step", id="advanced_label")
                                 yield Select([
-                                    (f"CHECK | {stage.number}. {stage.label}", stage.number)
+                                    (f"{stage.number}. {stage.label}", stage.number)
                                     if stage.number < 2 else
                                     (f"PRO FREE | {stage.number}. {stage.label}", stage.number)
                                     if stage.number < 6 else
@@ -728,7 +727,7 @@ class GoogleAITUI(App[None]):
             self._last_mode = str(mode)
             stages = STAGES if mode == "single" else STAGES[2:6]
             selector.set_options([
-                (f"CHECK | {stage.number}. {stage.label}", stage.number)
+                (f"{stage.number}. {stage.label}", stage.number)
                 if stage.number < 2 else
                 (f"PRO FREE | {stage.number}. {stage.label}", stage.number)
                 if stage.number < 6 else
