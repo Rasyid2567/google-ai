@@ -1232,6 +1232,8 @@ def main():
     ap.add_argument("--list", action="store_true", help="List offer metadata without opening checkout")
     ap.add_argument("--inspect-sku", choices=READ_ONLY_PROMO_SKUS,
                     help="Query one unverified promotion product ID in read-only mode; never open checkout")
+    ap.add_argument("--clean-account-confirmed", action="store_true",
+                    help="Self-attest this Play account has never used a Google One/AI trial or introductory offer; only for paid Ultra")
     ap.add_argument("--force", action="store_true", help="UNSAFE: bypass Play Store account verification")
     ap.add_argument("--mode", type=int, default=None,
                     help="Subscription replacement mode: 1=TIME_PRORATION 2=CHARGE_PRORATED_PRICE 3=WITHOUT_PRORATION 4=DEFERRED 5=CHARGE_FULL_PRICE")
@@ -1254,6 +1256,12 @@ def main():
                 (not a.list and not a.account)):
             ap.error("Ultra USD 19.99 requires one verified Google Play account, "
                      "--no-add --no-switch, and no force/stack/old-token options")
+        if not a.list and not a.clean_account_confirmed:
+            ap.error("Paid Ultra requires --clean-account-confirmed: the user must "
+                     "attest that the Play account never used a Google One/AI trial "
+                     "or introductory offer. This does NOT verify Google eligibility.")
+    elif a.clean_account_confirmed:
+        ap.error("--clean-account-confirmed is only valid with --plan ultra19")
     if a.inspect_sku:
         # This mode must never inherit paid/stack/force arguments or account
         # files. It targets the currently selected Android Play profile.
