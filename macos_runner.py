@@ -54,6 +54,8 @@ def stage_command(step: int, serial: str, account: str = "",
                      "--plan", plan, "--serial", serial]
     if stack:
         result.append("--stack")
+    if step == 6:
+        result.append("--clean-account-confirmed")
     return result
 
 
@@ -168,7 +170,8 @@ def check_offer(report: dict, step: int) -> None:
 
 
 def run_stage(step: int, serial: str, env: dict[str, str],
-              confirmed: bool = False, active_confirmed: bool = False) -> int:
+              confirmed: bool = False, active_confirmed: bool = False,
+              clean_account_confirmed: bool = False) -> int:
     if step == 0:
         return run_engine(stage_command(0, serial), env)
     if step == 1:
@@ -179,6 +182,9 @@ def run_stage(step: int, serial: str, env: dict[str, str],
         return 0
     if not confirmed or (3 <= step <= 5 and not active_confirmed):
         raise RuntimeError("Explicit checkout and existing-plan confirmations required")
+    if step == 6 and not clean_account_confirmed:
+        raise RuntimeError("Ultra paid mode needs the user's self-confirmation of a "
+                           "clean account with no previous trial or introductory offer")
     print("Checking Android environment before paid stage...", flush=True)
     if run_engine(stage_command(0, serial), env):
         raise RuntimeError("Android environment checks failed; no checkout started")
@@ -206,11 +212,18 @@ def main(argv: list[str] | None = None) -> int:
                         help="Explicitly authorize the selected checkout stage")
     parser.add_argument("--active-confirmed", action="store_true",
                         help="Confirm existing active plan for Steps 3–5")
+    parser.add_argument("--clean-account-confirmed", action="store_true",
+                        help="Self-attest no previous Google One/AI trial or promotion, for Ultra Step 6")
     args = parser.parse_args(argv)
     if args.step >= 2 and not args.confirmed:
         parser.error("Steps 2–5 require explicit --confirmed; may initiate real charges")
     if 3 <= args.step <= 5 and not args.active_confirmed:
         parser.error("Steps 3–5 also require --active-confirmed")
+    if args.step == 6 and not args.clean_account_confirmed:
+        parser.error("Paid Ultra Step 6 requires --clean-account-confirmed: this "
+                     "does not verify eligibility with Google Play")
+    if args.step != 6 and args.clean_account_confirmed:
+        parser.error("--clean-account-confirmed is only for Ultra Step 6")
     try:
         adb, serial = preflight()
         env = os.environ.copy()
@@ -218,7 +231,8 @@ def main(argv: list[str] | None = None) -> int:
         env["PYTHONIOENCODING"] = "utf-8:backslashreplace"
         env["PYTHONUTF8"] = "1"
         print(f"Device {serial}", flush=True)
-        return run_stage(args.step, serial, env, args.confirmed, args.active_confirmed)
+        return run_stage(args.step, serial, env, args.confirmed, args.active_confirmed,
+                         args.clean_account_confirmed)
     except (OSError, RuntimeError, ValueError, subprocess.TimeoutExpired) as error:
         print(f"Stage stopped: {type(error).__name__}: {error}", file=sys.stderr, flush=True)
         return 1
