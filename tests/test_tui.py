@@ -427,18 +427,13 @@ class TextualSmokeTests(unittest.IsolatedAsyncioTestCase):
                         compact = app.query_one("#payment_notice_compact", Static)
                         self.assertFalse(app.query_one("#workflow_actions").display)
                         self.assertEqual(notice.region.height, 0)
-                        if size[1] < 27:
-                            # Compact screens prioritize real action buttons rather
-                            # than displaying cards / warnings that obscure them.
-                            self.assertFalse(compact.display)
-                            self.assertTrue(app.query_one("#start_ultra").display)
-                        else:
-                            self.assertTrue(compact.display)
-                            wording = str(compact.render())
-                            self.assertIn("Pro may need card holds", wording)
-                            self.assertIn("Ultra is paid", wording)
-                            self.assertIn("Google Play decides eligibility", wording)
-                            self.assertLessEqual(compact.region.bottom, app.query_one("#welcome_panel").region.bottom)
+                        self.assertTrue(compact.display)
+                        wording = str(compact.render())
+                        self.assertIn("Pro FREE", wording)
+                        self.assertIn("Ultra PAID", wording)
+                        self.assertIn("Google Play", wording)
+                        self.assertTrue(app.query_one("#start_ultra").display)
+                        self.assertLessEqual(compact.region.bottom, app.query_one("#welcome_panel").region.bottom)
                         self.assertGreater(app.query_one("#status_panel").region.height, 3)
                         app.advanced_pressed()
                         for _ in range(30):
