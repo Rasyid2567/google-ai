@@ -31,13 +31,14 @@ STAGES = {
     3: ("pro6", "6months-eft", True),
     4: ("pro6b", "6months-eft-2", True),
     5: ("pro6c", "6months-eft-ss-2026", True),
+    6: ("ultra19", "g1.ai.ultra.3months_ip_90p.acq", False),
 }
 
 
 def stage_command(step: int, serial: str, account: str = "",
                   python: str = sys.executable) -> list[str]:
-    if type(step) is not int or step not in range(6):
-        raise ValueError("Step must be an integer between 0 and 5")
+    if type(step) is not int or step not in range(7):
+        raise ValueError("Step must be an integer between 0 and 6")
     if not serial or serial.startswith("-"):
         raise ValueError("Selected Android device must have an explicit ADB serial")
     base = [python, str(ROOT / "ultra0.py")]
@@ -142,6 +143,21 @@ def verified_account(serial: str, env: dict[str, str], report: dict) -> str:
 
 def check_offer(report: dict, step: int) -> None:
     _plan, expected, _stack = STAGES[step]
+    if step == 6:
+        matches = [offer for offer in report["offers"] if isinstance(offer, dict) and
+                   offer.get("product") == expected and
+                   str(offer.get("micros")) == "19990000" and
+                   offer.get("currency") == "USD" and
+                   offer.get("period") == "P1M" and
+                   offer.get("cycles") == 3 and
+                   str(offer.get("renewal_micros")) == "199990000" and
+                   offer.get("renewal_period") == "P1M" and
+                   offer.get("renewal_currency") == "USD"]
+        if len(matches) != 1:
+            raise RuntimeError("Ultra USD 19.99 monthly for 3 months and USD 199.99 "
+                               "renewal pricing was not uniquely verified in offer data. "
+                               "No checkout started.")
+        return
     matches = [offer for offer in report["offers"] if isinstance(offer, dict) and
                offer.get("id") == expected and str(offer.get("micros")) == "0"]
     if not matches:
@@ -161,7 +177,7 @@ def run_stage(step: int, serial: str, env: dict[str, str],
         print(f"Account {account}", flush=True)
         print(f"Offers {len(report['offers'])} (eligibility not guaranteed)", flush=True)
         return 0
-    if not confirmed or (step >= 3 and not active_confirmed):
+    if not confirmed or (3 <= step <= 5 and not active_confirmed):
         raise RuntimeError("Explicit checkout and existing-plan confirmations required")
     print("Checking Android environment before paid stage...", flush=True)
     if run_engine(stage_command(0, serial), env):
@@ -174,14 +190,18 @@ def run_stage(step: int, serial: str, env: dict[str, str],
     if read_play_account(serial, env) != account:
         raise RuntimeError("Google Play account changed; no checkout started")
     print(f"Account {account}", flush=True)
-    print(f"Step {step} offer inspected; first phase zero-priced.", flush=True)
+    if step == 6:
+        print("Ultra 20x candidate checked: USD 19.99/month for 3 months; "
+              "USD 199.99/month renewal. Paid Subscribe requires manual review.", flush=True)
+    else:
+        print(f"Step {step} offer inspected; first phase zero-priced.", flush=True)
     print("CAUTION: Checkout may incur charges. Verify all terms in Google Play.", flush=True)
     return run_engine(stage_command(step, serial, account), env)
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="ePlus AI Toolkit macOS native stage adapter")
-    parser.add_argument("--step", type=int, required=True, choices=range(6))
+    parser.add_argument("--step", type=int, required=True, choices=range(7))
     parser.add_argument("--confirmed", action="store_true",
                         help="Explicitly authorize the selected checkout stage")
     parser.add_argument("--active-confirmed", action="store_true",
@@ -189,7 +209,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.step >= 2 and not args.confirmed:
         parser.error("Steps 2–5 require explicit --confirmed; may initiate real charges")
-    if args.step >= 3 and not args.active_confirmed:
+    if 3 <= args.step <= 5 and not args.active_confirmed:
         parser.error("Steps 3–5 also require --active-confirmed")
     try:
         adb, serial = preflight()
