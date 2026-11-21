@@ -3,13 +3,14 @@
 .SYNOPSIS
   Single-entry Windows/MuMu setup, diagnostics, offer listing and optional guided stages.
 .DESCRIPTION
-  Defaults to the interactive Textual dashboard. Use -Cli or -Step 0..5 for the
+  Defaults to the interactive Textual dashboard. Use -Cli or -Step 0..6 for the
   original command-line interface. Original Steps 2-5 require explicit selection.
   -AllStages runs original Steps 2-5, with approval for each billable stage.
   -StartStep 3 with -AllStages skips Step 2 when a subscription is already active.
   Individual -Step 2..5 commands do not require typed confirmations.
   -AllStages retains verification prompts between potentially billable steps.
   Step 5 is the author's optional additional offer and can be skipped.
+  Step 6 is an independent Ultra 20x USD 19.99/month x 3 offer with manual paid checkout.
   The original ultra0.py may automatically click Subscribe during a live stage.
   Always verify the account, current charge, renewal terms and subscription in Google Play.
 .EXAMPLE
@@ -35,7 +36,7 @@
 param(
     [string]$Email = "",
     [string]$Serial = "",
-    [ValidateRange(0,5)]
+    [ValidateRange(0,6)]
     [int]$Step = 1,
     [switch]$AllStages,
     [ValidateRange(2,5)]
@@ -166,7 +167,10 @@ if ($Help) {
     exit 0
 }
 if ($AllStages -and $PSBoundParameters.ContainsKey("Step") -and $Step -ne 1) {
-    Stop-Workflow "Choose either -AllStages or -Step 0..5, not both."
+    Stop-Workflow "Choose either -AllStages or -Step 0..6, not both."
+}
+if ($Step -eq 6 -and $Force) {
+    Stop-Workflow "Ultra USD 19.99 cannot use -Force; verify the Google Play account."
 }
 if ($PSBoundParameters.ContainsKey("StartStep") -and -not $AllStages) {
     Stop-Workflow "-StartStep requires -AllStages."
@@ -350,7 +354,7 @@ try {
         return
     }
 
-    Stage "Optional original Pro subscription steps (2-5)"
+    Stage "Optional Pro subscription steps (2-5) or separate Ultra paid step (6)"
     Note "CAUTION: ultra0.py is not a harmless preview. It can automatically press Subscribe."
     Note "An offer with micros=0 may still have later paid phases, and stacking 12+6+6 months is UNVERIFIED."
     if ($AllStages) {
@@ -402,7 +406,8 @@ try {
         [pscustomobject]@{ Number = 2; Name = "Pro 12-month offer"; Plan = "pro12"; Offer = "12months-eft"; Stack = $false },
         [pscustomobject]@{ Number = 3; Name = "Pro additional 6 months"; Plan = "pro6"; Offer = "6months-eft"; Stack = $true },
         [pscustomobject]@{ Number = 4; Name = "Pro second additional 6 months"; Plan = "pro6b"; Offer = "6months-eft-2"; Stack = $true },
-        [pscustomobject]@{ Number = 5; Name = "Pro optional alternative 6 months"; Plan = "pro6c"; Offer = "6months-eft-ss-2026"; Stack = $true }
+        [pscustomobject]@{ Number = 5; Name = "Pro optional alternative 6 months"; Plan = "pro6c"; Offer = "6months-eft-ss-2026"; Stack = $true },
+        [pscustomobject]@{ Number = 6; Name = "Ultra 20x - US$19.99/mo for 3 months"; Plan = "ultra19"; Offer = "g1.ai.ultra.3months_ip_90p.acq"; Stack = $false }
     )
     $selectedStages = @(
         if ($AllStages) {
@@ -439,13 +444,30 @@ try {
                 Stop-Workflow ("Could not refresh the offer list for Step {0}: {1}" -f $stage.Number, $offerReport.status)
             }
         }
-        $available = @($offerReport.offers | Where-Object { $_.id -eq $stage.Offer -and [string]$_.micros -eq "0" })
+        if ($stage.Number -eq 6) {
+            $available = @($offerReport.offers | Where-Object {
+                $_.product -eq $stage.Offer -and [string]$_.micros -eq "19990000" -and
+                $_.currency -eq "USD" -and $_.period -eq "P1M" -and
+                [int]$_.cycles -eq 3 -and [string]$_.renewal_micros -eq "199990000" -and
+                $_.renewal_currency -eq "USD" -and $_.renewal_period -eq "P1M"
+            })
+            if ($available.Count -ne 1) {
+                Stop-Workflow "Exact Ultra US$19.99 for three months and US$199.99 renewal not uniquely found. No checkout started."
+            }
+        } else {
+            $available = @($offerReport.offers | Where-Object { $_.id -eq $stage.Offer -and [string]$_.micros -eq "0" })
+        }
         if ($available.Count -eq 0) {
             Show-UserIssue -Code "offer_not_available" -Details ("Step {0}, offer {1}" -f $stage.Number, $stage.Offer) -DebugMode $ShowDebug
             break
         }
 
-        if ($stage.Stack) {
+        if ($stage.Number -eq 6) {
+            Write-Warning "Ultra 20x (30 TB) is a separate paid offer, not a Pro trial."
+            Write-Warning "Claim: 3 monthly payments of US$19.99, then US$199.99/month."
+            Write-Warning "Check Google Play account, today's amount, later prices and cancellation terms."
+            if (-not (Confirm-Exact "Open Ultra checkout for MANUAL payment confirmation? No Subscribe tap will be automated." "ULTRA")) { break }
+        } elseif ($stage.Stack) {
             Note "The original author requires an existing ACTIVE subscription for an update."
             Note "Do not proceed if the prior subscription was cancelled, expired or not verified."
         } else {
@@ -480,7 +502,10 @@ try {
                 $reason = [string]$report.sheet.reason
             }
         }
-        if ($report.status -eq "checkout_requested") {
+        if ($stage.Number -eq 6 -and $report.status -eq "paid_checkout_review_required") {
+            Show-Status "Ultra" "Checkout open; review & confirm manually in Google Play" "Yellow"
+            break
+        } elseif ($report.status -eq "checkout_requested") {
             Show-Status "Checkout" "Submitted; check Google Play" "Yellow"
         } else {
             $issueCode = if ($reason) { $reason } else { [string]$report.status }
