@@ -434,7 +434,10 @@ class TextualSmokeTests(unittest.IsolatedAsyncioTestCase):
                         self.assertGreater(app.query_one("#status_panel").region.height, 3)
                         self.assertLessEqual(compact.region.bottom, app.query_one("#welcome_panel").region.bottom)
                         app.advanced_pressed()
-                        await pilot.pause()
+                        for _ in range(30):
+                            await pilot.pause()
+                            if app.query_one("#run").region.height > 0:
+                                break
                         self.assertTrue(app.query_one("#workflow_actions").display)
                         wording = str(notice.render())
                         for detail in ("Step 2 (12 months)", "Step 3 (6)", "Step 4 (6)",
