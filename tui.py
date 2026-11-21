@@ -257,8 +257,8 @@ class GoogleAITUI(App[None]):
     Screen.compact #toolbar, Screen.compact #update_bar, Screen.compact #credit,
     Screen.compact #action_bar, Screen.compact #secondary_actions { margin: 0; }
     Screen.narrow #action_bar { height: auto; layout: vertical; }
-    Screen.narrow #main_actions { width: 100%; height: 2; }
-    Screen.narrow #main_actions Button { height: 2; }
+    Screen.narrow #main_actions { width: 100%; height: auto; layout: vertical; }
+    Screen.narrow #main_actions Button { width: 100%; height: 2; }
     Screen.narrow #advanced_toggle { width: 100%; min-width: 0; height: 2; min-height: 1; margin: 0; border: none; }
     Screen.narrow #action_bar Button:focus { outline: none; text-style: bold underline; }
     Screen.narrow #toolbar { grid-size: 2; grid-columns: 1fr 1fr; grid-rows: 1 1; height: 2; }
