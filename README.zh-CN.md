@@ -1,6 +1,6 @@
 # ePlus AI Toolkit — 简体中文
 
-<!-- Source README.md git-blob: b21c1f4be66be621b06ef1fb53746af36770d95c -->
+<!-- Source README.md git-blob: 632fec4122d7499344d2bded14883a280a04c82f -->
 
 [English](README.md) · [Tiếng Việt](README.vi.md) · **简体中文** · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md)
 
@@ -240,6 +240,10 @@ CLI 确认选项为 **1 = Continue（继续）、2 = End run（结束）、0 = S
 
 [文档主页](docs/README.md) · [历史中文参考指南](docs/i18n/README.zh-CN.md) · [付款安全](docs/SAFETY.md)
 
-## 可选：只读检查促销 SKU
+## 可选 Ultra 20x 套餐：前三个月每月 19.99 美元
 
-命令行新增了单独的只读检查方式，用于查看第三方压缩包中提到但**尚未验证**的 Google AI Pro/Ultra 商品 ID。例如：`python ultra0.py --inspect-sku g1.play.2tb.ai`。此命令会自动进入仅列出优惠的模式，并拒绝付款、订阅叠加或跳过账号校验的参数；终端界面的付款步骤不变。**查到优惠不等于账号符合资格、价格已确认或订阅已经生效。** 环境准备仍可能修改模拟器设置。详见 [SKU 清单及限制](docs/PROMO-SKU-INSPECTION.md)。
+独立的 **Step 6** 提供 Google AI Ultra 20x（30 TB）候选促销套餐，商品 ID 为 `g1.ai.ultra.3months_ip_90p.acq`。第三方脚本声称前三个月**每月 19.99 美元**（三次收费共 59.97 美元），第四个月起**每月 199.99 美元**。这并非针对所有 Google Play 账号都已验证的优惠，也不会改变 Pro Step 2–5。
+
+Windows 用户可以在 **Advanced > One step only** 中选择 Step 6，或运行 `.\\run-all.ps1 -Step 6 -Email account@example.com`；macOS 用户可在终端界面选择 Step 6。只查询而不打开支付界面，请运行 `python ultra0.py --inspect-sku g1.ai.ultra.3months_ip_90p.acq`。
+
+程序会先核对商品 ID 与美元计费阶段，**不会自动点击付费的 Subscribe 按钮**。请自行在 Google Play 确认账号、每月收费、续订价格与取消条件。本模式拒绝 `--force` 和订阅令牌叠加。**不强制要求 MuMu 12 或 Android 12**；现有的 ADB/root/Frida 与 Google Play 环境兼容即可。详见 [套餐说明与安全限制](docs/PROMO-SKU-INSPECTION.md)。
