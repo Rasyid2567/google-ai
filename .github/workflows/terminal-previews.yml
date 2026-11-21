@@ -87,9 +87,10 @@ jobs:
           expected = [
               '01-startup.png', '02-disconnected.png', '03-offer-found.png',
               '04-step-picker-compact.png', '05-approval-compact.png', '06-play-review.png',
+              '07-checkout-error.png',
           ]
           labels = ['Start', 'Disconnected', 'Offers found', 'Choose a step (90×20)',
-                    'Step 2 confirmation (90×20)', 'Review in Google Play']
+                    'Step 2 confirmation (90×20)', 'Review in Google Play', 'Checkout error notification']
           paths = sorted(p.name for p in Path('images').iterdir())
           if paths != expected:
               raise SystemExit('Unexpected preview artifact contents')
@@ -155,5 +156,5 @@ jobs:
               api(f'{root}/issues/{number}/comments', 'POST', {'body': body})
           with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as summary:
               summary.write(body + '\n')
-          print(f'Published six preview images for {head[:12]}.')
+          print(f'Published {len(expected)} preview images for {head[:12]}.')
           PY
