@@ -39,7 +39,7 @@ STAGES = (
     Stage(3, "Pro +6 months", "6months-eft"),
     Stage(4, "Pro +6 months (second)", "6months-eft-2"),
     Stage(5, "Optional +6 months", "6months-eft-ss-2026"),
-    Stage(6, "Ultra 20x - US$19.99/mo x 3", "g1.ai.ultra.3months_ip_90p.acq"),
+    Stage(6, "Ultra 20x (PAID) - US$19.99/mo", "g1.ai.ultra.3months_ip_90p.acq"),
 )
 
 
@@ -59,7 +59,7 @@ MESSAGES = {
     ),
     "paid_checkout_review_required": (
         "Ultra checkout opened - review manually",
-        "Review US$19.99/month for 3 months and US$199.99/month renewal. "
+        "For a clean account that has never used a trial or intro promotion. Review US$19.99/month for 3 months and US$199.99/month renewal. "
         "No Subscribe button was pressed; only Google Play can confirm eligibility and billing.",
     ),
     "paid_checkout_unverified": (
