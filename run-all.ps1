@@ -39,6 +39,8 @@ param(
     [ValidateRange(0,6)]
     [int]$Step = 1,
     [switch]$AllStages,
+    [switch]$CleanAccountConfirmed,
+    [switch]$UltraPaidApproved,
     [ValidateRange(2,5)]
     [int]$StartStep = 2,
     [switch]$Force,
@@ -171,6 +173,9 @@ if ($AllStages -and $PSBoundParameters.ContainsKey("Step") -and $Step -ne 1) {
 }
 if ($Step -eq 6 -and $Force) {
     Stop-Workflow "Ultra USD 19.99 cannot use -Force; verify the Google Play account."
+}
+if (($CleanAccountConfirmed -or $UltraPaidApproved) -and ($Step -ne 6 -or $AllStages)) {
+    Stop-Workflow "Ultra self-approval flags are only valid with standalone -Step 6."
 }
 if ($PSBoundParameters.ContainsKey("StartStep") -and -not $AllStages) {
     Stop-Workflow "-StartStep requires -AllStages."
@@ -466,10 +471,12 @@ try {
             Write-Warning "ULTRA PAID is SEPARATE from the reported free Pro 24-month group."
             Write-Warning "The source requires a CLEAN account: never used a Google One/AI trial or introductory offer."
             Write-Warning "This is your self-attestation, NOT a Google eligibility check."
-            if (-not (Confirm-Exact "Confirm THIS Play account has NEVER used any Google One/AI trial or introductory promotion?" "CLEAN ACCOUNT")) { break }
+            if (-not $CleanAccountConfirmed -and
+                -not (Confirm-Exact "Confirm THIS Play account has NEVER used any Google One/AI trial or introductory promotion?" "CLEAN ACCOUNT")) { break }
             Write-Warning "Claim: 3 monthly payments of US$19.99, then US$199.99/month."
             Write-Warning "Check Google Play account, today's amount, later prices and cancellation terms."
-            if (-not (Confirm-Exact "Open Ultra checkout for MANUAL payment confirmation? No Subscribe tap will be automated." "ULTRA")) { break }
+            if (-not $UltraPaidApproved -and
+                -not (Confirm-Exact "Open Ultra checkout for MANUAL payment confirmation? No Subscribe tap will be automated." "ULTRA")) { break }
         } elseif ($stage.Stack) {
             Note "The original author requires an existing ACTIVE subscription for an update."
             Note "Do not proceed if the prior subscription was cancelled, expired or not verified."
