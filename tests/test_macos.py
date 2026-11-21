@@ -108,6 +108,12 @@ class MacStageAdapterTests(unittest.TestCase):
                     macos_runner.check_offer(report, 6)
         macos_runner.check_offer({"status": "listed", "offers": [required]}, 6)
 
+    def test_ultra_paid_requires_clean_account_attestation_before_preflight(self):
+        with patch("macos_runner.run_engine") as execute:
+            with self.assertRaisesRegex(RuntimeError, "clean account"):
+                macos_runner.run_stage(6, "emulator-5554", {}, confirmed=True)
+            execute.assert_not_called()
+
     def test_ultra_is_independent_no_stack_and_does_not_require_active_plan(self):
         command = macos_runner.stage_command(6, "emulator-5554",
                                               "alice@example.com", "python")
@@ -115,6 +121,7 @@ class MacStageAdapterTests(unittest.TestCase):
         self.assertIn("ultra19", command)
         self.assertNotIn("--stack", command)
         self.assertNotIn("--force", command)
+        self.assertIn("--clean-account-confirmed", command)
         with patch("macos_runner.run_engine", return_value=0) as execute, \
              patch("macos_runner.list_offers", return_value={
                  "status": "listed", "offers": [{
@@ -126,7 +133,8 @@ class MacStageAdapterTests(unittest.TestCase):
                  }], "detected_play_account": "alice@example.com"}), \
              patch("macos_runner.read_play_account", return_value="alice@example.com"):
             self.assertEqual(macos_runner.run_stage(6, "emulator-5554", {},
-                                                    confirmed=True), 0)
+                                                    confirmed=True,
+                                                    clean_account_confirmed=True), 0)
             self.assertEqual(execute.call_count, 2)
 
     def test_tui_core_mac_passes_explicit_checkout_approval(self):
@@ -140,6 +148,7 @@ class MacStageAdapterTests(unittest.TestCase):
                     self.assertEqual(command[command.index("--step") + 1], str(step))
                     self.assertEqual("--confirmed" in command, step >= 2)
                     self.assertEqual("--active-confirmed" in command, 3 <= step <= 5)
+                    self.assertEqual("--clean-account-confirmed" in command, step == 6)
 
     def test_reports_must_be_fresh(self):
         with tempfile.TemporaryDirectory() as temp:
