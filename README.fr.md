@@ -1,6 +1,6 @@
 # ePlus AI Toolkit — Français
 
-<!-- Source README.md git-blob: 52a6b829e68d1c83f2ffba023a0d43364ea8b6eb -->
+<!-- Source README.md git-blob: b21c1f4be66be621b06ef1fb53746af36770d95c -->
 
 [English](README.md) · [Tiếng Việt](README.vi.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · **Français**
 
@@ -240,3 +240,7 @@ Voir aussi [structure et maintenance](docs/PROJECT.md), [utilisation et CLI](doc
 **Auteur d'origine :** [@gylive](https://github.com/gylive) — [google-ultra](https://github.com/gylive/google-ultra). **Maintenance :** [David Nguyen (@hoangsvit)](https://github.com/hoangsvit) / [ePlus.DEV](https://eplus.dev). Les mentions MIT de l'auteur initial sont conservées dans `THIRD_PARTY_NOTICES.md`.
 
 [Centre de documentation](docs/README.md) · [Guide historique en français](docs/i18n/README.fr.md) · [Sécurité des paiements](docs/SAFETY.md)
+
+## Option : inspection en lecture seule des SKU promotionnels
+
+Une commande distincte permet de consulter les identifiants Google AI Pro/Ultra mentionnés dans une archive tierce **non vérifiée**. Exemple : `python ultra0.py --inspect-sku g1.play.2tb.ai`. Cette commande active uniquement la consultation et refuse les options de paiement, de cumul d'abonnements ou de contournement de la vérification du compte. Elle n'ajoute aucune étape d'achat au tableau de bord. **Une offre affichée ne prouve ni l'éligibilité, ni le tarif réel, ni l'activation d'un abonnement.** La préparation de l'environnement peut toutefois modifier les paramètres de l'émulateur. Voir la [liste des SKU et ses limites](docs/PROMO-SKU-INSPECTION.md).
