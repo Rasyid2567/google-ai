@@ -21,7 +21,7 @@ from textual import on, work
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
-from textual.widgets import Button, Footer, Header, Link, RichLog, Select, Static
+from textual.widgets import Button, Checkbox, Footer, Header, Link, RichLog, Select, Static
 
 from tui_core import STAGES, Outcome, command_for_step, mask_email, \
     needs_setup, offer_explorer_lines, outcome_for_stage, read_fresh_report, \
@@ -44,20 +44,34 @@ class Approval(ModalScreen[bool]):
     #approval_actions Button { margin-left: 1; }
     """
 
-    def __init__(self, title: str, message: str) -> None:
+    def __init__(self, title: str, message: str, clean_account_ack: bool = False) -> None:
         super().__init__()
         self.title_text, self.message_text = title, message
+        self.clean_account_ack = clean_account_ack
 
     def compose(self) -> ComposeResult:
         with Vertical(id="approval_card"):
             yield Static(self.title_text, id="approval_title")
             yield Static(self.message_text, id="approval_message")
+            if self.clean_account_ack:
+                yield Checkbox(
+                    "I confirm this account has NEVER used a Google One / AI trial "
+                    "or introductory offer (self-declared; Google Play decides eligibility).",
+                    value=False, id="clean_account_ack")
             with Horizontal(id="approval_actions"):
                 yield Button("Cancel", id="cancel")
-                yield Button("Continue", id="approve", variant="warning")
+                yield Button("Continue", id="approve", variant="warning",
+                             disabled=self.clean_account_ack)
+
+    @on(Checkbox.Changed, "#clean_account_ack")
+    def clean_account_changed(self, event: Checkbox.Changed) -> None:
+        self.query_one("#approve", Button).disabled = not event.value
 
     @on(Button.Pressed, "#approval_actions Button")
     def approve(self, event: Button.Pressed) -> None:
+        if event.button.id == "approve" and self.clean_account_ack:
+            if not self.query_one("#clean_account_ack", Checkbox).value:
+                return
         self.dismiss(event.button.id == "approve")
 
 
@@ -107,6 +121,9 @@ class GoogleAITUI(App[None]):
     .section { color: #6cdbf8; text-style: bold; margin: 0 0 1 0; }
     #workflow { height: auto; margin-bottom: 1; }
     .workflow-step { color: #b4cbe0; height: 1; }
+    .plan-group { color: #6cdbf8; text-style: bold; height: auto; margin: 1 0 0 0; }
+    #ultra_group { color: #ffd098; }
+    #clean_account_ack { height: auto; margin-bottom: 1; }
     #nav_help, #diagnose, #debug, #exit {
         width: 100%; height: 3; margin: 0;
     }
@@ -237,9 +254,19 @@ class GoogleAITUI(App[None]):
                 with Vertical(id="controls"):
                     yield Static("STEPS", classes="section")
                     with Vertical(id="workflow"):
-                        for stage in STAGES:
+                        yield Static("SETUP & OFFER CHECK", classes="plan-group")
+                        for stage in STAGES[:2]:
                             yield Static(f"○  {stage.number}. {stage.label}",
                                          id=f"stage_{stage.number}", classes="workflow-step")
+                        yield Static("PRO · FREE TRIAL · UP TO 24 MONTHS",
+                                     classes="plan-group", id="pro_group")
+                        for stage in STAGES[2:6]:
+                            yield Static(f"○  {stage.number}. {stage.label}",
+                                         id=f"stage_{stage.number}", classes="workflow-step")
+                        yield Static("ULTRA · PAID · CLEAN ACCOUNT",
+                                     classes="plan-group", id="ultra_group")
+                        yield Static(f"○  6. {STAGES[6].label}",
+                                     id="stage_6", classes="workflow-step")
                     yield Button("Help & Guide", id="nav_help")
                     yield Button("Diagnose Android connection", id="diagnose")
                     yield Button("Show technical details", id="debug")
@@ -262,8 +289,14 @@ class GoogleAITUI(App[None]):
                                 with Vertical(classes="field", id="step_field"):
                                     yield Static("Step", id="advanced_label")
                                     yield Select(
-                                        [(f"{stage.number}. {stage.label}", stage.number)
-                                         for stage in STAGES],
+                                        [
+                                            (f"Check | {stage.number}. {stage.label}", stage.number)
+                                            if stage.number <= 1 else
+                                            (f"PRO FREE | {stage.number}. {stage.label}", stage.number)
+                                            if stage.number <= 5 else
+                                            (f"ULTRA PAID | {stage.number}. {stage.label}", stage.number)
+                                            for stage in STAGES
+                                        ],
                                         value=self.initial_step, id="step", allow_blank=False)
                             with Horizontal(id="run_row"):
                                 yield Button("Run selected step", id="run", variant="primary")
@@ -279,7 +312,7 @@ class GoogleAITUI(App[None]):
                             "Have at least US$3 available: 3 separate US$1 card checks, "
                             "not one US$3 payment.\n"
                             "These may be temporary holds. Verify each step in Google Play; "
-                            "24 months is not guaranteed.",
+                            "24 months is not guaranteed. Pro and paid Ultra are SEPARATE groups.",
                             id="payment_notice",
                         )
                         yield Static(
@@ -449,15 +482,17 @@ class GoogleAITUI(App[None]):
             if sequence:
                 self._set_message("Ultra is separate; select One step only, not a Pro sequence.")
                 return
-            title = "Open Ultra 20x US$19.99/month checkout?"
+            title = "ULTRA PAID - open US$19.99/month checkout?"
             message = (
-                "Separate Ultra 20x (30 TB) offer: the source claims US$19.99 "
-                "per month for 3 months, then US$199.99 per month. "
-                "This is not confirmed by Google for your account.\n\n"
-                "Confirm the active Play account is correct and review every "
-                "charge, currency and renewal date in Google Play. "
-                "The toolkit will NOT tap Subscribe on a paid checkout. "
-                "No Android version or specific MuMu emulator is required."
+                "SEPARATE PAID GROUP, not the Pro free-trial / up-to-24-month flow. "
+                "For a CLEAN account that has NEVER used a Google One / AI trial "
+                "or introductory promotion, per the source instructions. "
+                "The toolkit cannot verify past offers: this is your confirmation, "
+                "and Google Play makes the final eligibility decision.\n\n"
+                "Source claim: Ultra 20x (30 TB) costs US$19.99/month for 3 months "
+                "(3 charges), then US$199.99/month. Verify the actual billing terms "
+                "and correct account on Google Play. The toolkit will NOT tap Subscribe. "
+                "MuMu 12 / Android 12 are not required."
             )
         elif step == 2:
             title = "Start initial 12-month checkout?"
@@ -488,7 +523,7 @@ class GoogleAITUI(App[None]):
         if previous_verified:
             message = ("Confirm the previous stage ACTUALLY changed the Google Play "
                        "subscription/renewal date. " + message)
-        self.push_screen(Approval(title, message),
+        self.push_screen(Approval(title, message, clean_account_ack=(step == 6)),
                          lambda approved: self._start(step, sequence) if approved else None)
 
     @on(Button.Pressed, "#quickstart")
