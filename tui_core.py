@@ -141,6 +141,8 @@ def command_for_step(step: int, repo: Path, shell: str | None = None) -> list[st
             command.append("--confirmed")
         if 3 <= step <= 5:
             command.append("--active-confirmed")
+        if step == 6:
+            command.append("--clean-account-confirmed")
         return command
     executable = shell or shutil.which("powershell.exe") or shutil.which("pwsh")
     if not executable:
@@ -151,8 +153,13 @@ def command_for_step(step: int, repo: Path, shell: str | None = None) -> list[st
     # Single steps are non-interactive at the PowerShell approval layer.
     # Using the existing wrapper keeps ADB, Frida, Play-account, offer and
     # checkout validation in one place instead of copying billing code.
-    return [executable, "-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass",
-            "-File", str(script), "-Step", str(step)]
+    command = [executable, "-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass",
+               "-File", str(script), "-Step", str(step)]
+    if step == 6:
+        # A separate TUI approval required the clean-account checkbox first.
+        # Avoid a hidden Read-Host prompt in non-interactive PowerShell.
+        command += ["-CleanAccountConfirmed", "-UltraPaidApproved"]
+    return command
 
 
 def read_fresh_report(directory: Path, step: int, started_at: float,
