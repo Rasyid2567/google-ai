@@ -1,6 +1,6 @@
 # ePlus AI Toolkit — Tiếng Việt
 
-<!-- Source README.md git-blob: 52a6b829e68d1c83f2ffba023a0d43364ea8b6eb -->
+<!-- Source README.md git-blob: b21c1f4be66be621b06ef1fb53746af36770d95c -->
 
 [English](README.md) · **Tiếng Việt** · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md)
 
@@ -247,3 +247,7 @@ Bạn cũng có thể tham khảo [cấu trúc dự án](docs/PROJECT.md), [các
 **Tác giả gốc:** [@gylive](https://github.com/gylive) — [google-ultra](https://github.com/gylive/google-ultra). **Người duy trì:** [David Nguyen (@hoangsvit)](https://github.com/hoangsvit) / [ePlus.DEV](https://eplus.dev). Giữ nguyên thông báo MIT của tác giả gốc trong [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md); giấy phép này không mặc nhiên áp dụng cho các đóng góp mới không liên quan. [Danh sách người đóng góp](https://github.com/hoangsvit/google-ai/graphs/contributors).
 
 [Trung tâm tài liệu](docs/README.md) · [Tài liệu tham khảo cũ (tiếng Việt)](docs/i18n/README.vi.md) · [An toàn thanh toán](docs/SAFETY.md)
+
+## Tùy chọn kiểm tra SKU ưu đãi ở chế độ chỉ đọc
+
+Có thể dùng dòng lệnh để kiểm tra riêng từng mã sản phẩm Google AI Pro/Ultra được đề cập trong một tệp bên thứ ba **chưa được xác minh**. Ví dụ: `python ultra0.py --inspect-sku g1.play.2tb.ai`. Lệnh tự chuyển sang chế độ xem danh sách, từ chối các tùy chọn thanh toán, cộng dồn đăng ký hoặc bỏ qua xác minh tài khoản; không bổ sung bước thanh toán mới vào giao diện. **Thông tin ưu đãi không chứng minh tài khoản đủ điều kiện, giá thực tế hay đăng ký đã kích hoạt.** Quá trình chuẩn bị giả lập vẫn có thể thay đổi cấu hình. Xem [danh sách SKU và giới hạn kiểm tra](docs/PROMO-SKU-INSPECTION.md).
