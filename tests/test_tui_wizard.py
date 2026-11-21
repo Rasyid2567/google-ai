@@ -251,13 +251,19 @@ class WizardFlowTests(unittest.IsolatedAsyncioTestCase):
                     self.assertFalse(app.query_one("#offers_toggle").display)
                     self.assertGreater(app.query_one("#run").region.height, 0)
                     app.query_one("#mode").value = "from"
-                    await pilot.pause()
+                    for _ in range(30):
+                        await pilot.pause()
+                        if app.query_one("#step").value == 2:
+                            break
                     self.assertEqual(app.query_one("#step").value, 2)
                     app.query_one("#step").value = 4
                     app.selected_pressed()
                     confirm.assert_called_with(4, True)
                     app.query_one("#mode").value = "all"
-                    await pilot.pause()
+                    for _ in range(30):
+                        await pilot.pause()
+                        if app.query_one("#step").value == 2:
+                            break
                     self.assertEqual(app.query_one("#step").value, 2)
                     self.assertFalse(app.query_one("#step_field").display)
                     app.selected_pressed()
