@@ -286,3 +286,7 @@ GitHub Actions checks Python, PowerShell, Textual and mocked Frida/Billing behav
 - [Community contributors](https://github.com/hoangsvit/google-ai/graphs/contributors)
 
 The upstream MIT notice is retained in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md); that notice does not independently license unrelated new contributions.
+
+## Optional read-only promotion SKU inspection
+
+A separate CLI-only inspection mode can query candidate Pro/Ultra product IDs reported in an **unverified third-party archive**. For example, run `python ultra0.py --inspect-sku g1.play.2tb.ai`. This automatically enables list-only mode, rejects checkout/stack/account-bypass options, and does not add any payment stage to the dashboard. **Offer metadata is not proof of eligibility, pricing, or subscription activation.** Emulator environment setup may still change settings. See the [candidate SKU list and limitations](docs/PROMO-SKU-INSPECTION.md).
