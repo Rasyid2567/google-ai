@@ -280,7 +280,10 @@ class ResponsiveScreenTests(unittest.IsolatedAsyncioTestCase):
                         self.assertIsInstance(app.screen, Approval)
                         self.assertIn("Confirm this Google Play account", screen_text(app))
                         app.screen.query_one("#approval_scroll").scroll_end(animate=False)
-                        await pilot.pause()
+                        for _ in range(30):
+                            await pilot.pause()
+                            if "not guaranteed." in screen_text(app):
+                                break
                         self.assertIn("not guaranteed.", screen_text(app))
                         await pilot.click("#cancel")
                         await pilot.pause()
@@ -288,7 +291,10 @@ class ResponsiveScreenTests(unittest.IsolatedAsyncioTestCase):
                         await pilot.pause()
                         self.assertIsInstance(app.screen, HelpScreen)
                         app.screen.query_one("#help_scroll").scroll_end(animate=False)
-                        await pilot.pause()
+                        for _ in range(30):
+                            await pilot.pause()
+                            if "only prevents later steps" in screen_text(app):
+                                break
                         self.assertIn("only prevents later steps", screen_text(app))
                         await pilot.click("#close_help")
 
