@@ -1,6 +1,6 @@
 # ePlus AI Toolkit — 简体中文
 
-<!-- Source README.md git-blob: 52a6b829e68d1c83f2ffba023a0d43364ea8b6eb -->
+<!-- Source README.md git-blob: b21c1f4be66be621b06ef1fb53746af36770d95c -->
 
 [English](README.md) · [Tiếng Việt](README.vi.md) · **简体中文** · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md)
 
@@ -239,3 +239,7 @@ CLI 确认选项为 **1 = Continue（继续）、2 = End run（结束）、0 = S
 **原作者：**[@gylive](https://github.com/gylive) — [google-ultra](https://github.com/gylive/google-ultra)。**维护者：**[David Nguyen (@hoangsvit)](https://github.com/hoangsvit) / [ePlus.DEV](https://eplus.dev)。原始 MIT 版权声明保留在 `THIRD_PARTY_NOTICES.md`。
 
 [文档主页](docs/README.md) · [历史中文参考指南](docs/i18n/README.zh-CN.md) · [付款安全](docs/SAFETY.md)
+
+## 可选：只读检查促销 SKU
+
+命令行新增了单独的只读检查方式，用于查看第三方压缩包中提到但**尚未验证**的 Google AI Pro/Ultra 商品 ID。例如：`python ultra0.py --inspect-sku g1.play.2tb.ai`。此命令会自动进入仅列出优惠的模式，并拒绝付款、订阅叠加或跳过账号校验的参数；终端界面的付款步骤不变。**查到优惠不等于账号符合资格、价格已确认或订阅已经生效。** 环境准备仍可能修改模拟器设置。详见 [SKU 清单及限制](docs/PROMO-SKU-INSPECTION.md)。
