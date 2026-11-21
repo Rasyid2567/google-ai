@@ -1,6 +1,6 @@
 # ePlus AI Toolkit — Tiếng Việt
 
-<!-- Source README.md git-blob: b21c1f4be66be621b06ef1fb53746af36770d95c -->
+<!-- Source README.md git-blob: 632fec4122d7499344d2bded14883a280a04c82f -->
 
 [English](README.md) · **Tiếng Việt** · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md)
 
@@ -248,6 +248,10 @@ Bạn cũng có thể tham khảo [cấu trúc dự án](docs/PROJECT.md), [các
 
 [Trung tâm tài liệu](docs/README.md) · [Tài liệu tham khảo cũ (tiếng Việt)](docs/i18n/README.vi.md) · [An toàn thanh toán](docs/SAFETY.md)
 
-## Tùy chọn kiểm tra SKU ưu đãi ở chế độ chỉ đọc
+## Tùy chọn Ultra 20x — 19,99 USD/tháng trong 3 tháng
 
-Có thể dùng dòng lệnh để kiểm tra riêng từng mã sản phẩm Google AI Pro/Ultra được đề cập trong một tệp bên thứ ba **chưa được xác minh**. Ví dụ: `python ultra0.py --inspect-sku g1.play.2tb.ai`. Lệnh tự chuyển sang chế độ xem danh sách, từ chối các tùy chọn thanh toán, cộng dồn đăng ký hoặc bỏ qua xác minh tài khoản; không bổ sung bước thanh toán mới vào giao diện. **Thông tin ưu đãi không chứng minh tài khoản đủ điều kiện, giá thực tế hay đăng ký đã kích hoạt.** Quá trình chuẩn bị giả lập vẫn có thể thay đổi cấu hình. Xem [danh sách SKU và giới hạn kiểm tra](docs/PROMO-SKU-INSPECTION.md).
+**Step 6** bổ sung riêng gói Google AI Ultra 20x (30 TB), SKU `g1.ai.ultra.3months_ip_90p.acq`. Theo bộ script bên thứ ba, giá là **19,99 USD mỗi tháng trong 3 tháng** (tổng 59,97 USD qua ba kỳ), sau đó **199,99 USD/tháng**. Đây là ưu đãi **chưa được xác minh cho mọi tài khoản** và không ảnh hưởng chuỗi Pro Step 2–5.
+
+Trên Windows, chọn Step 6 trong **Advanced > One step only**, hoặc chạy `.\\run-all.ps1 -Step 6 -Email account@example.com`. Trên macOS, chọn Step 6 ở giao diện. Muốn chỉ xem thông tin gói mà không mở thanh toán, dùng `python ultra0.py --inspect-sku g1.ai.ultra.3months_ip_90p.acq`.
+
+Công cụ kiểm tra đúng SKU và các kỳ giá USD trước khi mở Google Play. **Công cụ không tự nhấn Subscribe cho gói trả phí này.** Bạn phải tự xác nhận tài khoản, số tiền từng tháng, giá gia hạn và điều kiện hủy trên Google Play. Không dùng `--force` hoặc cộng dồn token đăng ký. **Không bắt buộc MuMu 12 hay Android 12**; chỉ cần môi trường Android hiện có tương thích ADB/root/Frida và các ứng dụng Google Play cần thiết. Xem [chi tiết và cảnh báo](docs/PROMO-SKU-INSPECTION.md).
