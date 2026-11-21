@@ -443,7 +443,7 @@ class TextualSmokeTests(unittest.IsolatedAsyncioTestCase):
                         wording = str(notice.render())
                         for detail in ("Step 2 (12)", "Step 3 (6)", "Step 4 (6)",
                                        "Three separate US$1 checks", "not one US$3 payment",
-                                       "temporary holds", "not guaranteed", "ULTRA PAID", "CLEAN"):
+                                       "temporary holds", "not guaranteed", "ULTRA PAID", "clean account"):
                             self.assertIn(detail, wording)
                         self.assertGreater(app.query_one("#run").region.height, 0)
                     launch.assert_not_called()
