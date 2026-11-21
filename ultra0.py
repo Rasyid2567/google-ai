@@ -99,13 +99,7 @@ ULTRA_19_SKU = "g1.ai.ultra.3months_ip_90p.acq"
 ULTRA_19_PRICE_MICROS = "19990000"
 ULTRA_19_RENEWAL_MICROS = "199990000"
 
-READ_ONLY_PROMO_SKUS = (
-    "g1.play.2tb.ai",
-    "g1.20tb.3months_ip_90p",
-    "g1.20tb.3months_ip_80p",
-    "g1.ai.ultra.3months_ip_75p.acq",
-    "g1.ai.ultra.3months_ip_90p.acq",
-)
+READ_ONLY_PROMO_SKUS = (ULTRA_19_SKU,)
 
 def report_filename(email: str) -> str:
     """Use the complete account identity without leaking it into filenames.
