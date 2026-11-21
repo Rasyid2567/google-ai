@@ -1,48 +1,47 @@
-# Review of third-party Google AI promotion SKU candidates
+# Google AI Ultra 20x: US$19.99/month for 3 months
 
-This is an **inspection-only** supplement to the existing Offer Explorer. A third-party ZIP shared for review in November 2026 claimed several Google AI Pro / Ultra offer IDs, durations and prices. Those claims are **not independently verified**, and visible Google Play metadata does not establish eligibility, availability, an entitlement, or actual renewal pricing.
+The reviewed third-party ZIP claims a Google AI Ultra 20x (30 TB) promotional plan with **US$19.99/month for three months** (three separate charges, US$59.97 total), followed by **US$199.99/month** starting in month four. The candidate Google Play product ID is `g1.ai.ultra.3months_ip_90p.acq`. This is a **third-party claim**: listing it does not prove Google offers it to the active account, in the active region, or at the stated terms.
 
-## What was added
+## Added: independent Ultra Step 6
 
-Use the existing Android environment and the currently selected Google Play account to inspect **one candidate SKU at a time**:
+The original Pro steps 0–5 are unchanged. Step **6 — Ultra 20x, US$19.99/month x 3** is separate; it is **not** part of the Pro 12+6+6-month sequence and does not stack a purchase token.
+
+On **Windows**, choose Step 6 in the Textual dashboard (Advanced > One step only), or run:
+
+```powershell
+.\run-all.ps1 -Step 6 -Email account@example.com
+```
+
+On **macOS**, choose Step 6 in the same dashboard or, after preparing the environment, run:
 
 ```sh
-python ultra0.py --inspect-sku g1.play.2tb.ai
-python ultra0.py --inspect-sku g1.20tb.3months_ip_90p
-python ultra0.py --inspect-sku g1.20tb.3months_ip_80p
-python ultra0.py --inspect-sku g1.ai.ultra.3months_ip_75p.acq
+python3 macos_runner.py --step 6 --confirmed
+```
+
+For a **read-only** query that cannot open checkout, run:
+
+```sh
 python ultra0.py --inspect-sku g1.ai.ultra.3months_ip_90p.acq
 ```
 
-`--inspect-sku` automatically enables `--list` and requires the built-in allowlist of candidate IDs. It rejects `--force`, subscription stacking/old purchase tokens, alternate plans, and account-file checkout inputs. It cannot initiate a checkout through the bundled Frida script. A candidate that returns no offers is **not** evidence of a bug or a method to overcome Google's restrictions.
+The optional paid step checks one exact SKU and the following offer metadata **before opening checkout**:
 
-The normal Windows/macOS Textual Steps **0–5 remain unchanged**. This optional inspection is available via the direct Python CLI and is **not** a new purchase stage. Device preflight may still alter emulator, proxy or Frida setup, as documented in [Security](../SECURITY.md). Do not run this inspection on a device or profile you do not control.
+- First monthly phase: **USD 19.99**, exactly **3** billing cycles.
+- Next monthly phase: **USD 199.99**, in the same currency.
+- Offer must match uniquely. Different products, currencies, price amounts, phases or an ambiguous set of offers stop before checkout.
 
-## Exact ZIP findings: Ultra 20x / 30 TB
+The paid Google Play screen is **manual-only**: the application does not tap **Subscribe** for the Ultra offer. Recheck today's amount, all first-three-month charges, renewal price, next renewal date, cancellation terms and correct Google Play account **on the actual Google Play screen**. A billing flow opening successfully does not prove any subscription was activated.
 
-The archive's **batch file #10 (Ultra 30TB, 90% off, 19.99)** specifically claims the **Ultra 20x** tier (30 TB), **US$19.99 per month for the first three months**, not US$19.99 total for the entire three-month period. It states a US$199.99 monthly renewal from month four.
+## Android environment
 
-| Archive batch file | Claimed plan | Exact candidate product ID | Claimed months 1–3 | Claimed month 4 onward | Arithmetic for first 3 months |
-| --- | --- | --- | --- | --- | --- |
-| batch file #10 (Ultra 30TB, 90% off, 19.99) | Ultra 20x, 30 TB | `g1.ai.ultra.3months_ip_90p.acq` | US$19.99/month | US$199.99/month | US$59.97 |
-| batch file #9 (Ultra 30TB, 75% off, 49.99) | Ultra 20x, 30 TB | `g1.ai.ultra.3months_ip_75p.acq` | US$49.99/month | US$199.99/month | US$149.97 |
-| batch file #7 (Ultra 20TB, 90% off, 9.99) | Ultra 5x, 20 TB | `g1.20tb.3months_ip_90p` | US$9.99/month | US$99.99/month | US$29.97 |
-| batch file #8 (Ultra 20TB, 80% off, 19.99) | Ultra 5x, 20 TB | `g1.20tb.3months_ip_80p` | US$19.99/month | US$99.99/month | US$59.97 |
+This offer does **not require MuMu 12 or Android 12** as a special plan rule. Use the supported Android device/emulator setup you already have with working **ADB, root, Frida**, **Google Play Store** and **Google One**. Device/ROM/Frida compatibility still varies. Do not silently force-install a particular Android image or emulator just for this plan.
 
-These are **claims found in the supplied ZIP**, not verified Google-authorized regional offers. Google's public US plan information separately confirms the standard Ultra 5x / Ultra 20x prices of US$99.99 / US$199.99 per month (see [Google subscription prices](https://gemini.google/subscriptions/?currencyCode=USD)); it does not verify the 90% promotional offer. Validate the **actual payment due, currency, full three-month billing schedule, renewal terms and account** on the Google Play screen, rather than relying on the table, the SKU name, or its first pricing phase.
+The author suggested trying an account with no prior promotional subscription. That is **not confirmed as a universal Google eligibility rule**; the final decision belongs to Google Play. Do not use `--force` to skip account verification or bypass eligibility checks. The new Ultra mode refuses `--force`, stacking and old-token flags, and requires the current Play account to be verified.
 
-**Source prerequisites (not a guarantee of success):** The author's workflow specifies a MuMu emulator running an Android 12 image, root and ADB debugging enabled; Google Play Store and Google One installed; an account that has not previously used a trial offer; and the appropriate Frida version. The archive's setup instructions pin **Frida 16.5.9**. The current toolkit's other Android compatibility paths should not be removed or narrowed to this particular emulator image. In all cases, use an account and device you control and keep payments/manual confirmations separate from discovery.
+## Source and verification
 
-**Source inconsistency and checkout risk:** The named batch file calls `ultra0.py --account "current@device" --no-add --force --allow-paid --sku g1.ai.ultra.3months_ip_90p.acq`. The `--force` switch skips Google Play account identity verification. `--allow-paid` permits opening the billing flow for a non-zero price; the archive's `confirm_zero` does *not* validate the claimed paid promotion and its documentation contradicts its automatic subscription-tap behavior for zero-price cases. Do **not** copy the batch file verbatim into maintained scripts or execute it as proof of eligibility. The archive's Chinese usage text also references batch filenames batch numbers #10 (promotion listing) and #11 (Ultra 30TB checkout) that are not present under those names in the supplied ZIP.
+The ZIP's Ultra 30 TB 90%-off batch script used `--allow-paid` and `--force` together. It also implied subscription success from incomplete UI signals. **Those unsafe behaviors were not copied.** This implementation keeps checkout approval manual and does not claim to activate or extend service.
 
-**The new `--inspect-sku` mode only lists the candidate offer metadata. It never opens checkout, never enables `--force`, and does not claim the 3-month price or expiry is verified.**
+Only the requested US$19.99 plan is added. Other promotion SKUs from the ZIP were deliberately excluded.
 
-## Why the ZIP was not directly imported
-
-The third-party archive uses switches that can bypass Play-account checks or force offer tokens, handles purchase tokens across potentially multiple Android accounts, prints sensitive checkout tokens, and infers transaction outcomes from incomplete screen text. Its docs also inconsistently describe Ultra as a 12-month free offer while the supplied new batch files describe paid three-month promotions. Those behaviors were **not** copied. Never assume a client-visible offer is valid for the active Google Play account, or that a discounted first phase determines future charges.
-
-For the supported checkout steps, continue using the project’s existing explicit-approval flow and independently verify the final subscription state directly in Google Play. See [original source and credits](../THIRD_PARTY_NOTICES.md).
-
-## Verification limits
-
-Offline tests validate the SKU allowlist, JavaScript list-only guard and failure of mixed checkout/inspection arguments. They do **not** authenticate the claimed SKU IDs, discounts, trial duration, regional availability or Android/Frida behavior. No live subscription, payment, account eligibility or in-device checkout was tested for this feature.
+The repository's offline tests can verify argument validation, exact product/pricing selection, manual-only paid checkout and staged workflow behavior. They cannot prove the offer exists for a real account or that a live transaction succeeds. Do not treat a green CI run as confirmation of Google Play billing.
