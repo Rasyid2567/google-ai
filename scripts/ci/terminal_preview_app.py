@@ -6,10 +6,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from tui import GoogleAITUI  # noqa: E402
-from tui_core import Outcome  # noqa: E402
+from tui_core import Outcome, outcome_for_stage  # noqa: E402
 from device_diagnostics import ConnectionStatus  # noqa: E402
 
-SCENARIOS = {"startup", "disconnected", "offer_found", "step_picker", "approval", "review"}
+SCENARIOS = {"startup", "disconnected", "offer_found", "step_picker", "approval", "review", "checkout_error"}
 scenario = os.environ.get("PREVIEW_SCENARIO", "")
 if scenario not in SCENARIOS:
     raise SystemExit("Invalid preview scenario")
@@ -51,6 +51,12 @@ class PreviewApp(GoogleAITUI):
             self.current_step = 2
             self._finished(2, Outcome("checkout_requested", "Checkout submitted - not yet verified",
                                      "Check Google Play subscriptions and renewal date.", True), {})
+        elif scenario == "checkout_error":
+            # This renders the real failure path, with a safe synthetic report.
+            # No Android device, account, checkout, or purchase is involved.
+            self._received("Device emulator-5554")
+            self._finished(3, outcome_for_stage(3, 0, {"status": "launch_failed"}),
+                           {"status": "launch_failed"})
 
 
 PreviewApp(repo=Path(__file__).resolve().parents[2]).run()
