@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: textual-screenshots-${{ github.workflow }}-${{ github.ref }}
@@ -38,3 +38,47 @@ jobs:
           path: artifacts/tui-screenshots/
           if-no-files-found: error
           retention-days: 14
+
+      # Images are committed to a dedicated public preview branch, not the
+      # product branch. This keeps PR comments inline and links persistent,
+      # avoiding 14-day Actions ZIP downloads.
+      - name: Checkout persistent screenshot branch
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+        uses: actions/checkout@v4
+        with:
+          ref: ui-previews
+          path: ui-previews
+          persist-credentials: true
+      - name: Publish real PNG screenshots for inline PR previews
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          target="ui-previews/pr-${PR_NUMBER}"
+          mkdir -p "$target"
+          cp artifacts/tui-screenshots/*.png "$target/"
+          cp artifacts/tui-screenshots/README.txt "$target/"
+          cd ui-previews
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "pr-${PR_NUMBER}/"
+          if ! git diff --cached --quiet; then
+            git commit -m "docs(ui): publish actual Textual screenshots for PR #${PR_NUMBER}"
+            git push origin HEAD:ui-previews
+          else
+            echo "Preview images are unchanged."
+          fi
+      - name: Display inline Markdown image URLs
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          echo "### Copy into PR comment (images render inline)" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          for png in artifacts/tui-screenshots/*.png; do
+            name=$(basename "$png")
+            echo "![${name}](https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/ui-previews/pr-${PR_NUMBER}/${name})" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+          done
