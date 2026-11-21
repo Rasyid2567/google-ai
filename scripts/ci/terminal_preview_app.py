@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Render real TUI screens with synthetic, non-transactional fixture states."""
+"""Render real TUI screens with synthetic, non-transactional fixture states.
+
+The checkout-error case uses the actual app layout and error handler, but never
+connects to a real Android device or initiates any payment.
+"""
 import os
 import sys
 from pathlib import Path
