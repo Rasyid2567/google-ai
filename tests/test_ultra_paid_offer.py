@@ -78,6 +78,23 @@ class UltraPaidOfferTests(unittest.TestCase):
         auto_tap.assert_not_called()
         verify.assert_not_called()
 
+    def test_paid_ultra_needs_clean_account_confirmation_before_device_setup(self):
+        with patch.object(sys, "argv", [
+                "ultra0.py", "--plan", "ultra19", "--account", "test@example.com",
+                "--no-add", "--no-switch"]), patch.object(app, "find_adb") as adb:
+            with self.assertRaises(SystemExit) as raised:
+                app.main()
+        self.assertEqual(raised.exception.code, 2)
+        adb.assert_not_called()
+
+    def test_pro_cannot_inherit_clean_account_flag(self):
+        with patch.object(sys, "argv", [
+                "ultra0.py", "--plan", "pro12", "--account", "test@example.com",
+                "--clean-account-confirmed"]), patch.object(app, "find_adb") as adb:
+            with self.assertRaises(SystemExit):
+                app.main()
+        adb.assert_not_called()
+
     def test_direct_cli_refuses_force_before_device_setup(self):
         with patch.object(sys, "argv", ["ultra0.py", "--plan", "ultra19",
                                        "--account", "test@example.com",
