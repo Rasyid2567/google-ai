@@ -448,6 +448,59 @@ class TextualSmokeTests(unittest.IsolatedAsyncioTestCase):
                         self.assertTrue(app.query_one("#quickstart").display)
                     launch.assert_not_called()
 
+    async def test_pro_and_paid_ultra_are_separate_sidebar_groups(self):
+        from textual.widgets import Static
+        from tui import GoogleAITUI
+        with tempfile.TemporaryDirectory() as directory:
+            app = GoogleAITUI(repo=Path(directory))
+            with patch("tui.subprocess.Popen") as start:
+                async with app.run_test(size=(110, 35)) as pilot:
+                    await pilot.pause()
+                    self.assertIn("FREE TRIAL", str(
+                        app.query_one("#pro_group", Static).render()))
+                    self.assertIn("UP TO 24 MONTHS", str(
+                        app.query_one("#pro_group", Static).render()))
+                    self.assertIn("PAID", str(
+                        app.query_one("#ultra_group", Static).render()))
+                    self.assertIn("CLEAN ACCOUNT", str(
+                        app.query_one("#ultra_group", Static).render()))
+                    self.assertIn("19.99", str(
+                        app.query_one("#stage_6", Static).render()))
+                start.assert_not_called()
+
+    async def test_paid_ultra_requires_clean_account_ack_before_continue(self):
+        from textual.widgets import Button, Checkbox, Static
+        from tui import Approval, GoogleAITUI
+        with tempfile.TemporaryDirectory() as directory:
+            app = GoogleAITUI(repo=Path(directory))
+            with patch.object(GoogleAITUI, "_start") as start:
+                async with app.run_test(size=(110, 35)) as pilot:
+                    app._confirm_stage(6, False)
+                    await pilot.pause()
+                    self.assertIsInstance(app.screen, Approval)
+                    text = str(app.screen.query_one("#approval_message", Static).render())
+                    self.assertIn("CLEAN account", text)
+                    self.assertIn("NEVER used", text)
+                    self.assertIn("SEPARATE PAID GROUP", text)
+                    self.assertTrue(app.screen.query_one("#approve", Button).disabled)
+                    app.screen.query_one("#clean_account_ack", Checkbox).value = True
+                    await pilot.pause()
+                    self.assertFalse(app.screen.query_one("#approve", Button).disabled)
+                    await pilot.click("#cancel")
+                    await pilot.pause()
+                start.assert_not_called()
+
+    def test_windows_tui_passes_ultra_ack_without_interactive_read_host(self):
+        from tui_core import command_for_step
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "run-all.ps1").write_text("# mock", encoding="utf-8")
+            with patch("tui_core.sys.platform", "win32"):
+                command = command_for_step(6, root, shell="powershell.exe")
+            self.assertIn("-CleanAccountConfirmed", command)
+            self.assertIn("-UltraPaidApproved", command)
+            self.assertEqual(command[-4:-2], ["-Step", "6"])
+
     async def test_checkout_confirmations_explain_each_one_dollar_event(self):
         from textual.widgets import Static
         from tui import Approval, GoogleAITUI
