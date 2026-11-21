@@ -273,7 +273,7 @@ class GoogleAITUI(App[None]):
                             yield Button("Verified in Google Play → Next",
                                          id="next", disabled=True)
                             yield Button("Stop after current step", id="stop", disabled=True)
-                            yield Static("Steps 2–5 can open checkout and require confirmation.", id="read_only")
+                            yield Static("Pro Steps 2-5 and Ultra Step 6 can open checkout.", id="read_only")
                         yield Static(
                             "24-month example: Step 2 (12 months) + Step 3 (6) + Step 4 (6).\n"
                             "Have at least US$3 available: 3 separate US$1 card checks, "
@@ -403,12 +403,12 @@ class GoogleAITUI(App[None]):
         elif mode == "from":
             self.query_one("#step", Select).disabled = False
             self.query_one("#run", Button).label = "Run from selected step"
-            hint = ("Choose Step 2-5. Each later checkout requires verification."
-                    if step in (0, 1) else "Continue from this step; verify each checkout before Next.")
+            hint = ("Choose Pro Steps 2-5 for a sequence; Ultra 6 is one-step only."
+                    if step in (0, 1, 6) else "Continue from this step; verify each checkout before Next.")
         else:
             self.query_one("#step", Select).disabled = False
             self.query_one("#run", Button).label = "Run selected step"
-            hint = "Run only this step. Steps 2-5 can request real payment."
+            hint = "Run one step. Pro 2-5 and Ultra 6 may open Google Play checkout."
         self.query_one("#mode_hint", Static).update(hint)
 
     def action_toggle_advanced(self) -> None:
@@ -445,7 +445,21 @@ class GoogleAITUI(App[None]):
                        previous_verified: bool = False) -> None:
         if self.busy or self._diagnosing:
             return
-        if step == 2:
+        if step == 6:
+            if sequence:
+                self._set_message("Ultra is separate; select One step only, not a Pro sequence.")
+                return
+            title = "Open Ultra 20x US$19.99/month checkout?"
+            message = (
+                "Separate Ultra 20x (30 TB) offer: the source claims US$19.99 "
+                "per month for 3 months, then US$199.99 per month. "
+                "This is not confirmed by Google for your account.\n\n"
+                "Confirm the active Play account is correct and review every "
+                "charge, currency and renewal date in Google Play. "
+                "The toolkit will NOT tap Subscribe on a paid checkout. "
+                "No Android version or specific MuMu emulator is required."
+            )
+        elif step == 2:
             title = "Start initial 12-month checkout?"
             message = ("Confirm this Google Play account has NO active Google One subscription. "
                        "This step can automatically press Subscribe and create real charges.")
@@ -490,8 +504,8 @@ class GoogleAITUI(App[None]):
             self._confirm_stage(2, True)
         elif mode == "from":
             step = self._selected()
-            if step < 2:
-                self._set_message("Choose Step 2-5 to start a guided checkout sequence.")
+            if step < 2 or step == 6:
+                self._set_message("Only Pro Steps 2-5 support guided sequences. Use One step only for Ultra 6.")
                 return
             self._confirm_stage(step, True)
         else:
@@ -500,8 +514,8 @@ class GoogleAITUI(App[None]):
     @on(Button.Pressed, "#sequence")
     def sequence_pressed(self) -> None:
         step = self._selected()
-        if step < 2:
-            self._set_message("Choose Step 2, 3, 4 or 5 to start the subscription sequence.")
+        if step < 2 or step == 6:
+            self._set_message("Choose a Pro step 2-5 for the sequence; Ultra 6 runs separately.")
             return
         self._confirm_stage(step, True)
 
