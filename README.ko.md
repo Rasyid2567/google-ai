@@ -1,6 +1,6 @@
 # ePlus AI Toolkit — 한국어
 
-<!-- Source README.md git-blob: b21c1f4be66be621b06ef1fb53746af36770d95c -->
+<!-- Source README.md git-blob: 632fec4122d7499344d2bded14883a280a04c82f -->
 
 [English](README.md) · [Tiếng Việt](README.vi.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · **한국어** · [Español](README.es.md) · [Français](README.fr.md)
 
@@ -240,6 +240,10 @@ ePlus AI Toolkit 설치나 사용에 문제가 있다면 [ePlus Telegram 지원�
 
 [문서 모음](docs/README.md) · [이전 한국어 참고 안내](docs/i18n/README.ko.md) · [결제 안전](docs/SAFETY.md)
 
-## 선택 기능: 프로모션 SKU 읽기 전용 확인
+## 선택 기능: Ultra 20x 첫 3개월 월 US$19.99
 
-제3자 ZIP 파일에 제시된 **검증되지 않은** Google AI Pro/Ultra 상품 ID를 CLI에서 개별적으로 조회할 수 있습니다. 예: `python ultra0.py --inspect-sku g1.play.2tb.ai`. 이 명령은 자동으로 목록 조회 모드만 사용하며 결제, 구독 기간 추가, 계정 확인 우회 옵션을 거부합니다. 대시보드 결제 단계는 변경되지 않습니다. **혜택이 표시되어도 이용 자격, 실제 요금, 구독 활성화가 확인된 것은 아닙니다.** 환경 준비 과정에서 에뮬레이터 설정이 변경될 수 있습니다. [SKU 목록과 제한 사항](docs/PROMO-SKU-INSPECTION.md)을 확인하세요.
+별도 **Step 6**에서 Google AI Ultra 20x(30 TB) 후보 프로모션을 선택할 수 있습니다. 상품 ID는 `g1.ai.ultra.3months_ip_90p.acq`입니다. 제3자 스크립트에 따르면 첫 3개월은 **월 US$19.99**(총 US$59.97, 3회 결제), 이후에는 **월 US$199.99**입니다. 모든 Google Play 계정에서 이용 가능한지 확인되지 않았으며 Pro Step 2–5에는 영향을 주지 않습니다.
+
+Windows에서는 **Advanced > One step only**에서 Step 6을 선택하거나 `.\\run-all.ps1 -Step 6 -Email account@example.com`을 실행합니다. macOS에서도 같은 대시보드에서 Step 6을 선택합니다. 결제 화면을 열지 않고 조회하려면 `python ultra0.py --inspect-sku g1.ai.ultra.3months_ip_90p.acq`을 사용하세요.
+
+프로그램은 정확한 상품 ID와 USD 요금 단계를 확인한 뒤 Google Play 결제 화면을 엽니다. **유료 Subscribe 버튼을 자동으로 누르지 않습니다.** 계정, 첫 3개월의 청구 금액, 갱신 요금 및 취소 조건을 직접 확인해야 합니다. `--force` 및 구매 토큰 누적은 허용되지 않습니다. **MuMu 12 또는 Android 12가 필수 조건은 아닙니다.** 호환되는 ADB/root/Frida와 Google Play 환경을 사용하세요. [자세한 안내](docs/PROMO-SKU-INSPECTION.md)를 참고하세요.
