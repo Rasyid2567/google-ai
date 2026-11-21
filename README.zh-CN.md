@@ -1,6 +1,6 @@
 # ePlus AI Toolkit — 简体中文
 
-<!-- Source README.md git-blob: 632fec4122d7499344d2bded14883a280a04c82f -->
+<!-- Source README.md git-blob: c3e4a2e5de138f99affa260780d6b8b23310cd6a -->
 
 [English](README.md) · [Tiếng Việt](README.vi.md) · **简体中文** · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md)
 
@@ -247,3 +247,5 @@ CLI 确认选项为 **1 = Continue（继续）、2 = End run（结束）、0 = S
 Windows 用户可以在 **Advanced > One step only** 中选择 Step 6，或运行 `.\\run-all.ps1 -Step 6 -Email account@example.com`；macOS 用户可在终端界面选择 Step 6。只查询而不打开支付界面，请运行 `python ultra0.py --inspect-sku g1.ai.ultra.3months_ip_90p.acq`。
 
 程序会先核对商品 ID 与美元计费阶段，**不会自动点击付费的 Subscribe 按钮**。请自行在 Google Play 确认账号、每月收费、续订价格与取消条件。本模式拒绝 `--force` 和订阅令牌叠加。**不强制要求 MuMu 12 或 Android 12**；现有的 ADB/root/Frida 与 Google Play 环境兼容即可。详见 [套餐说明与安全限制](docs/PROMO-SKU-INSPECTION.md)。
+
+**套餐分组：** Pro Step 2–5 属于所报道的免费试用（最多 24 个月，无法保证）；Ultra Step 6 是**独立付费套餐**。根据来源，Ultra 要求**干净账号，即从未使用 Google One / AI 免费试用或首次优惠**。继续前必须自行确认；工具无法检查过去的试用记录，最终资格以 Google Play 为准。
