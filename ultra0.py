@@ -1005,11 +1005,11 @@ def assess_ultra_paid_terms(text: str) -> dict:
         return result
     # OCR/UI text is advisory. The user must review the real payment screen;
     # never turn an apparently matching string into an automatic paid tap.
-    if (re.search(r"google\\s+ai\\s+ultra|ultra\\s*20x", low) and
-            re.search(r"us\\$\\s*19[.,]99(?!\\d)", clean, re.I) and
-            re.search(r"us\\$\\s*199[.,]99(?!\\d)", clean, re.I) and
-            re.search(r"3\\s*[- ]?\\s*months?", clean, re.I) and
-            re.search(r"subscribe|\\u8ba2\\u9605|đăng ký", clean, re.I)):
+    if (re.search(r"google\s+ai\s+ultra|ultra\s*20x", low) and
+            re.search(r"us\$\s*19[.,]99(?!\d)", clean, re.I) and
+            re.search(r"us\$\s*199[.,]99(?!\d)", clean, re.I) and
+            re.search(r"3\s*[- ]?\s*months?", clean, re.I) and
+            re.search(r"subscribe|\u8ba2\u9605|dang ky", clean, re.I)):
         result["reason"] = "paid_terms_visible_manual_review"
     return result
 
