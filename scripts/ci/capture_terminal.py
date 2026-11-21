@@ -27,6 +27,8 @@ CASES = [
     ("04-step-picker-compact", "step_picker", 90, 20, ("Run this step", "Only this step will run")),
     ("05-approval-compact", "approval", 90, 20, ("Start initial 12-month checkout", "not guaranteed", "Cancel", "Continue")),
     ("06-play-review", "review", 110, 35, ("Verified in Google Play",)),
+    ("07-checkout-error", "checkout_error", 110, 35,
+     ("Could not open Google Play checkout", "Check Google One and Google Play", "Step finished")),
 ]
 
 
