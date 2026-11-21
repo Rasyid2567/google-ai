@@ -93,6 +93,16 @@ FRIDA_REMOTE = "/data/local/tmp/frida-server"
 FRIDA_REQUIRED = "16.5.9"
 REPORT_DIR = Path("ultra0-report")
 
+# Candidate product IDs observed in an unverified third-party archive.
+# Inspect them only: discovery does not prove availability or eligibility.
+READ_ONLY_PROMO_SKUS = (
+    "g1.play.2tb.ai",
+    "g1.20tb.3months_ip_90p",
+    "g1.20tb.3months_ip_80p",
+    "g1.ai.ultra.3months_ip_75p.acq",
+    "g1.ai.ultra.3months_ip_90p.acq",
+)
+
 def report_filename(email: str) -> str:
     """Use the complete account identity without leaking it into filenames.
 
@@ -695,12 +705,23 @@ def launch_app() -> int:
     return 0
 
 
-def build_js(plan: str = "auto", list_only: bool = False, stack: bool = False, old_token: str = "", stack_mode=None, activity_method="auto") -> str:
+def build_js(plan: str = "auto", list_only: bool = False, stack: bool = False, old_token: str = "", stack_mode=None, activity_method="auto", inspect_sku: str = "") -> str:
     """Build the product query for the requested Google Play plan."""
     if activity_method not in ("auto", "choose", "thread"):
         raise ValueError(f"Unsupported activity method: {activity_method}")
+    if inspect_sku:
+        if inspect_sku not in READ_ONLY_PROMO_SKUS:
+            raise ValueError("Unknown read-only promotion SKU")
+        if not list_only or plan != "auto" or stack or old_token or stack_mode is not None:
+            raise ValueError("Promotion SKU inspection requires isolated list-only mode")
     js = FRIDA_JS.replace('var ACTIVITY_METHOD="auto";',
                           f'var ACTIVITY_METHOD="{activity_method}";', 1)
+    if inspect_sku:
+        source = 'var PRODUCTS=["g1.play.20tb","g1.play.ai.pro","g1.30tb"];'
+        replacement = 'var PRODUCTS=' + json.dumps([inspect_sku]) + ';'
+        if source not in js:
+            raise RuntimeError("Frida product query template is missing")
+        js = js.replace(source, replacement, 1)
     if list_only:
         js = js.replace('var PREFER="";', 'var PREFER=""; var LIST_ONLY=true;', 1)
     if stack:
@@ -803,7 +824,7 @@ def get_target_frida_device(pid: int, serial: str):
     return selected
 
 
-def run_trial(pid: int, wait=90, plan="auto", list_only=False, stack=False, old_token="", stack_mode=None, activity_method="auto") -> dict:
+def run_trial(pid: int, wait=90, plan="auto", list_only=False, stack=False, old_token="", stack_mode=None, activity_method="auto", inspect_sku="") -> dict:
     step("Injecting billing module to inspect introductory offers")
     dev = get_target_frida_device(pid, SERIAL)
     note(f"Using Frida device: {dev.id} (ADB: {SERIAL})")
@@ -835,7 +856,7 @@ def run_trial(pid: int, wait=90, plan="auto", list_only=False, stack=False, old_
         elif ev and ("err" in ev or ev.startswith("no_")):
             res["errors"].append(p)
 
-    sc = sess.create_script(build_js(plan, list_only, stack, old_token, stack_mode, activity_method))
+    sc = sess.create_script(build_js(plan, list_only, stack, old_token, stack_mode, activity_method, inspect_sku))
     sc.on("message", on_msg)
     sc.load()
     time.sleep(wait)
@@ -1009,7 +1030,7 @@ def verify() -> str:
 
 
 # ---------- Per-account workflow ----------
-def process(email, password="", totp_secret="", add=True, card=None, plan="auto", no_switch=False, list_only=False, stack=False, old_token="", stack_mode=None, activity_method="auto") -> dict:
+def process(email, password="", totp_secret="", add=True, card=None, plan="auto", no_switch=False, list_only=False, stack=False, old_token="", stack_mode=None, activity_method="auto", inspect_sku="") -> dict:
     print("\n" + "=" * 56)
     print(f"  Processing account: {email}")
     print("=" * 56)
@@ -1069,7 +1090,8 @@ def process(email, password="", totp_secret="", add=True, card=None, plan="auto"
         rec["status"] = "app_not_started"
         return rec
     fr = run_trial(pid, plan=plan, list_only=list_only, stack=stack, old_token=old_token,
-                   stack_mode=stack_mode, activity_method=activity_method)
+                   stack_mode=stack_mode, activity_method=activity_method,
+                   inspect_sku=inspect_sku)
     rec.update(fr)
     if list_only:
         rec["status"] = "listed" if fr.get("offers") else "offer_query_failed"
@@ -1151,6 +1173,8 @@ def main():
     ap.add_argument("--account", help="Account: email[:password[:totp]]")
     ap.add_argument("--check", action="store_true", help="Check the Android, ADB and Frida environment")
     ap.add_argument("--list", action="store_true", help="List offer metadata without opening checkout")
+    ap.add_argument("--inspect-sku", choices=READ_ONLY_PROMO_SKUS,
+                    help="Query one unverified promotion product ID in read-only mode; never open checkout")
     ap.add_argument("--force", action="store_true", help="UNSAFE: bypass Play Store account verification")
     ap.add_argument("--mode", type=int, default=None,
                     help="Subscription replacement mode: 1=TIME_PRORATION 2=CHARGE_PRORATED_PRICE 3=WITHOUT_PRORATION 4=DEFERRED 5=CHARGE_FULL_PRICE")
@@ -1167,6 +1191,14 @@ def main():
     ap.add_argument("--plan", default="auto", choices=["auto", "5x", "20x", "pro12", "pro6", "pro6b", "pro6c"],
                     help="auto=query available products; 5x=Ultra 20TB; 20x=Ultra 30TB")
     a = ap.parse_args()
+    if a.inspect_sku:
+        # This mode must never inherit paid/stack/force arguments or account
+        # files. It targets the currently selected Android Play profile.
+        if (a.force or a.stack or a.old_token or a.mode is not None
+                or a.plan != "auto" or a.accounts or a.account):
+            ap.error("--inspect-sku is read-only and cannot be combined with checkout, "
+                     "account or account-bypass options")
+        a.list = True
 
     ADB = find_adb()
     globals()["SKIP_ACCOUNT_CHECK"] = bool(a.force)
@@ -1202,7 +1234,8 @@ def main():
         try:
             rec = process(email, pw, sec, add=(not a.no_add and not a.list), card=card, plan=a.plan,
                           no_switch=a.no_switch, list_only=a.list, stack=a.stack, old_token=a.old_token,
-                          stack_mode=a.mode, activity_method=a.activity_method)
+                          stack_mode=a.mode, activity_method=a.activity_method,
+                          inspect_sku=a.inspect_sku)
         except Exception as e:
             warn(f"{type(e).__name__}: {str(e)[:320]}")
             rec = {"email": email, "status": "exception", "error": str(e)[:320],
