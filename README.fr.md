@@ -1,6 +1,6 @@
 # ePlus AI Toolkit — Français
 
-<!-- Source README.md git-blob: b21c1f4be66be621b06ef1fb53746af36770d95c -->
+<!-- Source README.md git-blob: 632fec4122d7499344d2bded14883a280a04c82f -->
 
 [English](README.md) · [Tiếng Việt](README.vi.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · **Français**
 
@@ -241,6 +241,10 @@ Voir aussi [structure et maintenance](docs/PROJECT.md), [utilisation et CLI](doc
 
 [Centre de documentation](docs/README.md) · [Guide historique en français](docs/i18n/README.fr.md) · [Sécurité des paiements](docs/SAFETY.md)
 
-## Option : inspection en lecture seule des SKU promotionnels
+## Option Ultra 20x — 19,99 USD/mois pendant trois mois
 
-Une commande distincte permet de consulter les identifiants Google AI Pro/Ultra mentionnés dans une archive tierce **non vérifiée**. Exemple : `python ultra0.py --inspect-sku g1.play.2tb.ai`. Cette commande active uniquement la consultation et refuse les options de paiement, de cumul d'abonnements ou de contournement de la vérification du compte. Elle n'ajoute aucune étape d'achat au tableau de bord. **Une offre affichée ne prouve ni l'éligibilité, ni le tarif réel, ni l'activation d'un abonnement.** La préparation de l'environnement peut toutefois modifier les paramètres de l'émulateur. Voir la [liste des SKU et ses limites](docs/PROMO-SKU-INSPECTION.md).
+L'étape **6**, indépendante, ajoute une offre candidate Google AI Ultra 20x (30 To), identifiée par `g1.ai.ultra.3months_ip_90p.acq`. Selon un script tiers, le tarif serait de **19,99 USD/mois pendant 3 mois** (59,97 USD en trois paiements), puis de **199,99 USD/mois**. Cette offre **n'est pas confirmée pour tous les comptes** Google Play et ne modifie pas les étapes Pro 2 à 5.
+
+Sous Windows, sélectionnez Step 6 dans **Advanced > One step only** ou exécutez `.\\run-all.ps1 -Step 6 -Email account@example.com`. Sous macOS, sélectionnez Step 6 dans l'interface. Pour vérifier le SKU sans ouvrir le paiement : `python ultra0.py --inspect-sku g1.ai.ultra.3months_ip_90p.acq`.
+
+Le programme vérifie le SKU exact et les phases tarifaires en dollars avant d'ouvrir Google Play, mais **n'appuie jamais automatiquement sur Subscribe pour cette offre payante**. Vérifiez vous-même le compte, les trois mensualités, le renouvellement et les conditions de résiliation dans Google Play. `--force` et le cumul des jetons d'abonnement sont refusés. **MuMu 12 et Android 12 ne sont pas obligatoires** : utilisez un environnement ADB/root/Frida et Google Play compatible. Consultez les [détails et précautions](docs/PROMO-SKU-INSPECTION.md).
