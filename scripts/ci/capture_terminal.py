@@ -87,6 +87,10 @@ def main():
                             found = True
                             break
                     if not found:
+                        # Fixtures contain no accounts or payments. Report the
+                        # terminal buffer so a wrapped or clipped message can
+                        # be diagnosed without guessing from CI screenshots.
+                        print(f"Visible terminal on {name}: {visible!r}", flush=True)
                         raise RuntimeError(f"{name}: expected visible text not found: {expected!r}")
                     page.screenshot(path=str(OUTPUT / f"{name}.png"))
                     print(f"Captured {name}: {cols}x{rows} (fixture: {scenario})", flush=True)
