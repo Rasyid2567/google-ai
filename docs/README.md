@@ -49,3 +49,7 @@ Translations are maintained on a best-effort basis. For the latest technical beh
 [Report an issue](https://github.com/hoangsvit/google-ai/issues) · [Contributing](../CONTRIBUTING.md) · [AI agent development instructions](../AGENTS.md) · [Disclaimer](../DISCLAIMER.md) · [Third-party notices](../THIRD_PARTY_NOTICES.md)
 
 Work on the `dev` branch first; changes are promoted to `main` and published only after review. Automated checks do not validate real Google Play purchases.
+
+## Optional promotion SKU diagnostics
+
+[Read-only candidate SKU inspection](PROMO-SKU-INSPECTION.md) describes a limited CLI-only check of unverified third-party Pro/Ultra product IDs. It does **not** initiate checkout, extend the Stage 0–5 workflow, or establish account eligibility. Environment setup may still change emulator settings.
