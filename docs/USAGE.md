@@ -95,4 +95,4 @@ Only use a `-Serial` observed through ADB. `-Email` constrains the account expec
 
 ## Optional Ultra 20x USD 19.99/month offer
 
-Step **6** is an independent 30 TB Ultra offer, not part of Pro Steps 2–5. See the [Ultra offer details](PROMO-SKU-INSPECTION.md) for exact pricing checks, Windows/macOS selection, and manual checkout limitations. Do not use `--force` or expect a particular MuMu or Android 12 build.
+Step **6** belongs to the paid Ultra group (account must be clean: no previous Google One/AI trial or introductory offer, as claimed by the source). Pro Steps **2–5** belong to the separately reported free-trial / up-to-24-month group. The user must self-attest that the Ultra account is clean; Google Play determines eligibility. The macOS CLI also requires `--clean-account-confirmed`. See the [Ultra offer details](PROMO-SKU-INSPECTION.md) for exact pricing checks, Windows/macOS selection, and manual checkout limitations. Do not use `--force` or expect a particular MuMu or Android 12 build.
