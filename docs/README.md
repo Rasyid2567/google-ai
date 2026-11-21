@@ -50,6 +50,6 @@ Translations are maintained on a best-effort basis. For the latest technical beh
 
 Work on the `dev` branch first; changes are promoted to `main` and published only after review. Automated checks do not validate real Google Play purchases.
 
-## Optional promotion SKU diagnostics
+## Optional Ultra 20x US$19.99 promotion
 
-[Read-only candidate SKU inspection](PROMO-SKU-INSPECTION.md) describes a limited CLI-only check of unverified third-party Pro/Ultra product IDs. It does **not** initiate checkout, extend the Stage 0–5 workflow, or establish account eligibility. Environment setup may still change emulator settings.
+[Ultra 20x — US$19.99/month for 3 months](PROMO-SKU-INSPECTION.md) documents the optional independent **Step 6**, the one supported candidate SKU, the exact price-phase checks and manual Google Play checkout review. It does not change the Pro 0–5 sequence and does not require MuMu or Android 12 specifically. A displayed offer is not proof of eligibility or subscription activation.
