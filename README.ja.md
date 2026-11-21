@@ -1,6 +1,6 @@
 # ePlus AI Toolkit — 日本語
 
-<!-- Source README.md git-blob: 632fec4122d7499344d2bded14883a280a04c82f -->
+<!-- Source README.md git-blob: c3e4a2e5de138f99affa260780d6b8b23310cd6a -->
 
 [English](README.md) · [Tiếng Việt](README.vi.md) · [简体中文](README.zh-CN.md) · **日本語** · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md)
 
@@ -247,3 +247,5 @@ ePlus AI Toolkit のインストールや使用に問題があれば、[ePlus �
 Windows では **Advanced > One step only** から Step 6 を選ぶか、`.\\run-all.ps1 -Step 6 -Email account@example.com` を実行します。macOS では同じ画面から Step 6 を選択できます。決済を開かずに照会する場合は `python ultra0.py --inspect-sku g1.ai.ultra.3months_ip_90p.acq` を使います。
 
 ツールは商品 ID と米ドルでの課金条件を確認してから Google Play の決済画面を開きますが、**有料の Subscribe は自動タップしません**。アカウント、3 か月分の料金、更新料金、解約条件を Google Play でご自身で確認してください。`--force` や契約トークンの重ね掛けは使用できません。**MuMu 12 や Android 12 は必須ではありません**。対応する ADB/root/Frida と Google Play の環境を使用してください。[詳細と注意事項](docs/PROMO-SKU-INSPECTION.md)を参照してください。
+
+**グループ分け：** Pro Step 2〜5 は報告された無料トライアル（最大 24 か月、保証なし）、Ultra Step 6 は**別の有料グループ**です。出典によると Ultra は**過去に Google One / AI のトライアルや初回プロモーションを使っていないクリーンなアカウント**が必要です。続行前に自己申告が必要で、ツールは履歴を照合できず、実際の適格性は Google Play が判断します。
