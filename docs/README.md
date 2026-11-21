@@ -52,4 +52,4 @@ Work on the `dev` branch first; changes are promoted to `main` and published onl
 
 ## Optional Ultra 20x US$19.99 promotion
 
-[Ultra 20x — US$19.99/month for 3 months](PROMO-SKU-INSPECTION.md) documents the optional independent **Step 6**, the one supported candidate SKU, the exact price-phase checks and manual Google Play checkout review. It does not change the Pro 0–5 sequence and does not require MuMu or Android 12 specifically. A displayed offer is not proof of eligibility or subscription activation.
+[Ultra 20x — US$19.99/month for 3 months](PROMO-SKU-INSPECTION.md) documents the separate **Pro free-trial (Steps 2–5)** versus **Ultra paid / clean-account (Step 6)** groups, the one supported candidate SKU, the exact price-phase checks and manual Google Play checkout review. It does not change the Pro 0–5 sequence and does not require MuMu or Android 12 specifically. A displayed offer is not proof of eligibility or subscription activation.
