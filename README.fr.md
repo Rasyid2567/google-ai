@@ -1,6 +1,6 @@
 # ePlus AI Toolkit — Français
 
-<!-- Source README.md git-blob: 632fec4122d7499344d2bded14883a280a04c82f -->
+<!-- Source README.md git-blob: c3e4a2e5de138f99affa260780d6b8b23310cd6a -->
 
 [English](README.md) · [Tiếng Việt](README.vi.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · **Français**
 
@@ -248,3 +248,5 @@ L'étape **6**, indépendante, ajoute une offre candidate Google AI Ultra 20x (3
 Sous Windows, sélectionnez Step 6 dans **Advanced > One step only** ou exécutez `.\\run-all.ps1 -Step 6 -Email account@example.com`. Sous macOS, sélectionnez Step 6 dans l'interface. Pour vérifier le SKU sans ouvrir le paiement : `python ultra0.py --inspect-sku g1.ai.ultra.3months_ip_90p.acq`.
 
 Le programme vérifie le SKU exact et les phases tarifaires en dollars avant d'ouvrir Google Play, mais **n'appuie jamais automatiquement sur Subscribe pour cette offre payante**. Vérifiez vous-même le compte, les trois mensualités, le renouvellement et les conditions de résiliation dans Google Play. `--force` et le cumul des jetons d'abonnement sont refusés. **MuMu 12 et Android 12 ne sont pas obligatoires** : utilisez un environnement ADB/root/Frida et Google Play compatible. Consultez les [détails et précautions](docs/PROMO-SKU-INSPECTION.md).
+
+**Deux groupes distincts :** Pro (étapes 2 à 5) correspond à un essai gratuit signalé pouvant atteindre 24 mois, sans garantie. Ultra (étape 6) est une **offre payante séparée** exigeant, selon la source, **un compte vierge de tout ancien essai ou promotion de bienvenue Google One / AI**. Une auto-attestation est nécessaire : l'outil ne peut pas vérifier l'historique et Google Play détermine l'éligibilité.
