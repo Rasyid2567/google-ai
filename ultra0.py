@@ -95,6 +95,10 @@ REPORT_DIR = Path("ultra0-report")
 
 # Candidate product IDs observed in an unverified third-party archive.
 # Inspect them only: discovery does not prove availability or eligibility.
+ULTRA_19_SKU = "g1.ai.ultra.3months_ip_90p.acq"
+ULTRA_19_PRICE_MICROS = "19990000"
+ULTRA_19_RENEWAL_MICROS = "199990000"
+
 READ_ONLY_PROMO_SKUS = (
     "g1.play.2tb.ai",
     "g1.20tb.3months_ip_90p",
@@ -730,7 +734,13 @@ def build_js(plan: str = "auto", list_only: bool = False, stack: bool = False, o
         js = js.replace('var PREFER="";', 'var PREFER=""; var OLD_TOKEN="%s";' % old_token, 1)
     if stack_mode is not None:
         js = js.replace('var PREFER="";', 'var PREFER=""; var STACK_MODE=%d;' % stack_mode, 1)
-    if plan == "20x":
+    if plan == "ultra19":
+        if stack or old_token or stack_mode is not None:
+            raise ValueError("Ultra paid promotion does not support purchase-token stacking")
+        js = js.replace('var PRODUCTS=["g1.play.20tb","g1.play.ai.pro","g1.30tb"];',
+                        'var PRODUCTS=["' + ULTRA_19_SKU + '"];', 1)
+        js = js.replace("var PAID_ULTRA_19=false;", "var PAID_ULTRA_19=true;", 1)
+    elif plan == "20x":
         js = js.replace('var PRODUCTS=["g1.play.20tb","g1.play.ai.pro","g1.30tb"];',
                         'var PRODUCTS=["g1.play.ai.pro","g1.ai.pro","g1.30tb"];')
     elif plan == "5x":
@@ -872,6 +882,10 @@ def diagnose_launch_failure(fr: dict) -> tuple:
         return ("subscription_update_unavailable",
                 "Existing subscription token or replacement parameters were unavailable. "
                 "No safe subscription update was launched. Inspect the Play subscription state.")
+    if ev_names.intersection({"no_matching_paid_offer", "ambiguous_paid_offer"}):
+        return ("paid_promotion_unavailable",
+                "The exact Ultra 20x USD 19.99 x 3 months and USD 199.99 renewal "
+                "pricing phases were not uniquely present. No checkout was opened.")
     if "choose_err" in ev_names and ("activity_thread_err" in ev_names or "no_activity" in ev_names):
         return ("activity_lookup_failed",
                 "Both Java.choose and ActivityThread failed to locate a usable Activity. "
@@ -969,6 +983,49 @@ def assess_checkout_terms(text: str, expected_plan: str = "auto") -> dict:
         result["reason"] = "trial_duration_unverified"
         return result
     result["reason"] = "zero_today_and_duration_verified"
+    return result
+
+
+def assess_ultra_paid_terms(text: str) -> dict:
+    """Inspect a paid Google Play prompt without authorizing or pressing Subscribe.
+
+    The source ZIP's prices are claims, not Google-provided eligibility. A UI
+    prompt alone cannot establish subscription activation or payment success.
+    """
+    clean = " ".join(text.split())
+    low = clean.lower()
+    result = {"reason": "paid_terms_unverified", "confirmed": False, "text": clean[:400]}
+    if "or-reh-04" in low or ("secure your account" in low and
+                            "transaction can't be completed" in low):
+        result["reason"] = "payment_security_blocked"
+        return result
+    if any(x in low for x in ("already subscribed", "you're already subscribed",
+                             "not eligible", "ineligible", "processing")):
+        result["reason"] = "paid_checkout_blocked"
+        return result
+    # OCR/UI text is advisory. The user must review the real payment screen;
+    # never turn an apparently matching string into an automatic paid tap.
+    if (re.search(r"google\\s+ai\\s+ultra|ultra\\s*20x", low) and
+            re.search(r"us\\$\\s*19[.,]99(?!\\d)", clean, re.I) and
+            re.search(r"us\\$\\s*199[.,]99(?!\\d)", clean, re.I) and
+            re.search(r"3\\s*[- ]?\\s*months?", clean, re.I) and
+            re.search(r"subscribe|\\u8ba2\\u9605|đăng ký", clean, re.I)):
+        result["reason"] = "paid_terms_visible_manual_review"
+    return result
+
+
+def inspect_ultra_paid_checkout(wait=12) -> dict:
+    step("Inspecting Ultra pricing; paid Subscribe is always a manual action")
+    result = {"reason": "paid_terms_unverified", "confirmed": False}
+    for _ in range(max(1, wait // 2)):
+        visible = " ".join(n["text"] or n["desc"] for n in nodes(ui_xml())
+                           if n["text"] or n["desc"])
+        result = assess_ultra_paid_terms(visible)
+        if result["reason"] != "paid_terms_unverified":
+            break
+        time.sleep(2)
+    warn("Review the checkout amount, 3 monthly charges, renewal price, and "
+         "Google Play account manually. No paid Subscribe button was pressed.")
     return result
 
 
@@ -1099,6 +1156,12 @@ def process(email, password="", totp_secret="", add=True, card=None, plan="auto"
             rec["error"] = "No offer data returned; inspect BillingClient and Frida errors."
         return rec
     if fr["launched"] and fr["launched"].get("code") == 0:
+        if plan == "ultra19":
+            rec["sheet"] = inspect_ultra_paid_checkout()
+            rec["status"] = ("paid_checkout_review_required"
+                             if rec["sheet"]["reason"] == "paid_terms_visible_manual_review"
+                             else "paid_checkout_unverified")
+            return rec
         rec["sheet"] = confirm_zero(password=password, expected_plan=plan)
         # Preserve the original checkout screen if amount or offer terms
         # are ambiguous; never navigate away before the user can inspect it.
@@ -1188,9 +1251,15 @@ def main():
     ap.add_argument("--no-add", action="store_true", help="Do not add the account to Android")
     ap.add_argument("--no-switch", action="store_true",
                     help="Verify the current Google Play account without switching automatically")
-    ap.add_argument("--plan", default="auto", choices=["auto", "5x", "20x", "pro12", "pro6", "pro6b", "pro6c"],
-                    help="auto=query available products; 5x=Ultra 20TB; 20x=Ultra 30TB")
+    ap.add_argument("--plan", default="auto", choices=["auto", "5x", "20x", "pro12", "pro6", "pro6b", "pro6c", "ultra19"],
+                    help="ultra19=Ultra 20x USD 19.99/month x 3, manual paid checkout only")
     a = ap.parse_args()
+    if a.plan == "ultra19":
+        if (a.force or a.stack or a.old_token or a.mode is not None or
+                a.accounts or not a.no_add or not a.no_switch or
+                (not a.list and not a.account)):
+            ap.error("Ultra USD 19.99 requires one verified Google Play account, "
+                     "--no-add --no-switch, and no force/stack/old-token options")
     if a.inspect_sku:
         # This mode must never inherit paid/stack/force arguments or account
         # files. It targets the currently selected Android Play profile.
