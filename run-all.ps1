@@ -463,7 +463,10 @@ try {
         }
 
         if ($stage.Number -eq 6) {
-            Write-Warning "Ultra 20x (30 TB) is a separate paid offer, not a Pro trial."
+            Write-Warning "ULTRA PAID is SEPARATE from the reported free Pro 24-month group."
+            Write-Warning "The source requires a CLEAN account: never used a Google One/AI trial or introductory offer."
+            Write-Warning "This is your self-attestation, NOT a Google eligibility check."
+            if (-not (Confirm-Exact "Confirm THIS Play account has NEVER used any Google One/AI trial or introductory promotion?" "CLEAN ACCOUNT")) { break }
             Write-Warning "Claim: 3 monthly payments of US$19.99, then US$199.99/month."
             Write-Warning "Check Google Play account, today's amount, later prices and cancellation terms."
             if (-not (Confirm-Exact "Open Ultra checkout for MANUAL payment confirmation? No Subscribe tap will be automated." "ULTRA")) { break }
@@ -493,6 +496,7 @@ try {
                   "--plan", $stage.Plan, "--serial", $Serial, "--activity-method", $ActivityMethod)
         if ($Force) { $args += "--force" }
         if ($stage.Stack) { $args += "--stack" }
+        if ($stage.Number -eq 6) { $args += "--clean-account-confirmed" }
         Run-Command $Python $args
 
         $report = Read-PythonReport $key
