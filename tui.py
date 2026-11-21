@@ -247,8 +247,11 @@ class GoogleAITUI(App[None]):
     Screen.compact #details { height: 2; margin: 0; }
     Screen.compact #device, Screen.compact #account { height: 2; }
     Screen.compact #quick_hint { display: none; }
-    Screen.compact #plan_groups { margin: 0; }
-    Screen.compact #pro_group, Screen.compact #ultra_group { min-height: 2; }
+    /* Preserve actionable controls on small terminals; plan choice remains
+       explicit in the Pro and Ultra buttons, not in tall marketing cards. */
+    Screen.compact #plan_groups, Screen.narrow #plan_groups { display: none; }
+    Screen.compact #payment_notice_compact { display: none; }
+    Screen.session-active #plan_groups, Screen.session-active #payment_notice_compact { display: none; }
     Screen.compact #welcome_panel { margin-bottom: 0; }
     Screen.compact #state { margin-top: 0; }
     Screen.compact #toolbar, Screen.compact #update_bar, Screen.compact #credit,
