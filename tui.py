@@ -19,6 +19,7 @@ import time
 from rich.markup import escape
 from textual import on, work
 from textual.app import App, ComposeResult
+from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Footer, Header, Link, RichLog, Select, Static
@@ -71,7 +72,8 @@ class GoogleAITUI(App[None]):
     BINDINGS = [
         ("d", "toggle_debug", "Debug"),
         ("r", "run_selected", "Run step"),
-        ("q", "quit_safely", "Quit"),
+        Binding("ctrl+c", "quit_safely", "Emergency stop", priority=True),
+        Binding("q", "quit_safely", "Quit", show=False),
     ]
     CSS = """
     Screen { background: #081424; color: #e8f2fc; }
@@ -244,7 +246,7 @@ class GoogleAITUI(App[None]):
                     yield Button("Help & Guide", id="nav_help")
                     yield Button("Diagnose Android connection", id="diagnose")
                     yield Button("Show technical details", id="debug")
-                    yield Button("Exit toolkit", id="exit")
+                    yield Button("Emergency stop", id="exit")
                 with Vertical(id="results"):
                     with Vertical(id="welcome_panel"):
                         yield Static("GET STARTED · READ-ONLY CHECK", id="welcome")
