@@ -136,6 +136,24 @@ class CoreTests(unittest.TestCase):
 
 
 class TextualSmokeTests(unittest.IsolatedAsyncioTestCase):
+    async def test_step5_links_to_google_one_plans(self):
+        from textual.widgets import Link, Select
+        from tui import GoogleAITUI
+
+        with tempfile.TemporaryDirectory() as tmp:
+            app = GoogleAITUI(repo=Path(tmp))
+            async with app.run_test(size=(110, 35)) as pilot:
+                await pilot.click("#advanced_toggle")
+                link = app.query_one("#step5_plans", Link)
+                self.assertFalse(link.display)
+                app.query_one("#step", Select).value = 5
+                await pilot.pause()
+                self.assertTrue(link.display)
+                self.assertEqual(link.url, "https://one.google.com/about/google-ai-plans/")
+                app.query_one("#mode", Select).value = "all"
+                await pilot.pause()
+                self.assertFalse(link.display)
+
     async def test_application_branding(self):
         from tui import GoogleAITUI
         self.assertEqual(GoogleAITUI.TITLE, "ePlus AI Toolkit")
