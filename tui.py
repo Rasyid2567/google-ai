@@ -142,6 +142,7 @@ class GoogleAITUI(App[None]):
         width: 1fr; height: auto; color: #a5c8df;
         padding: 0 1;
     }
+    #step5_plans { display: none; height: 1; margin-top: 1; }
     #next, #stop { display: none; width: 100%; height: 3; margin-top: 1; }
     #status_panel {
         height: 1fr; min-height: 0; border: round #285a80;
@@ -268,6 +269,9 @@ class GoogleAITUI(App[None]):
                             with Horizontal(id="run_row"):
                                 yield Button("Run selected step", id="run", variant="primary")
                                 yield Static("Runs one step; no next step is automatic.", id="mode_hint")
+                            yield Link("Pro 3 months / Ultra on Google One",
+                                       url="https://one.google.com/about/google-ai-plans/",
+                                       id="step5_plans")
                             yield Button("Run sequence from step", id="sequence")
                             yield Button("Run all", id="run_all")
                             yield Button("Verified in Google Play → Next",
@@ -409,6 +413,10 @@ class GoogleAITUI(App[None]):
             self.query_one("#step", Select).disabled = False
             self.query_one("#run", Button).label = "Run selected step"
             hint = "Run only this step. Steps 2-5 can request real payment."
+        show_step5_plans = step == 5 and mode != "all"
+        self.query_one("#step5_plans", Link).display = show_step5_plans
+        if show_step5_plans:
+            hint += " Check Pro 3 months and Ultra availability in Google One."
         self.query_one("#mode_hint", Static).update(hint)
 
     def action_toggle_advanced(self) -> None:
