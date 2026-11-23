@@ -19,14 +19,14 @@ The default VM is N2 4-vCPU/16-GiB with an 80-GiB balanced persistent disk. **Ru
 ~~~bash
 git clone https://github.com/hoangsvit/google-ai.git
 cd google-ai
-git checkout dev
+git checkout feat/gcp-android-cloud-poc  # Before the Draft PR is merged; later use dev
 
 export PROJECT_ID="YOUR_GCP_PROJECT_ID"
 export ZONE="us-central1-a"  # Choose supported region/zone; e.g. asia-southeast1-b
-CONFIRM_COST=yes bash cloud/gcp/deploy.sh
+GIT_REF=feat/gcp-android-cloud-poc CONFIRM_COST=yes bash cloud/gcp/deploy.sh
 ~~~
 
-Deploy provisions a dedicated custom VPC, subnet, IAP SSH firewall rule, and Ubuntu 24.04 Compute Engine VM with nested virtualization. During first boot, the VM installs Docker, Python, ADB and Frida 16.5.9, clones this repository's selected ref (default: dev), and starts an official prebuilt Android Emulator image.
+Deploy provisions a dedicated custom VPC, subnet, IAP SSH firewall rule, and Ubuntu 24.04 Compute Engine VM with nested virtualization. During first boot, the VM installs Docker, Python, ADB and Frida 16.5.9, clones this repository's selected ref (default: dev; select the feature branch to test the PR), and starts an official prebuilt Android Emulator image.
 
 The official demo image used by default is **us-docker.pkg.dev/android-emulator-268719/images/30-google-x64:30.1.2** (an experimental image; not a verified Play Store/root environment). You can change its image under the same official registry using ANDROID_IMAGE when deploying, but compatibility must be tested. Use GIT_REF to choose a reviewed repository branch.
 
