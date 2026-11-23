@@ -1,0 +1,69 @@
+name: "🛠️ Setup & usage help / Hỗ trợ cài đặt"
+description: "Ask for help with installation, environment, or using the toolkit / Yêu cầu hỗ trợ."
+title: "[Help] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        First read the [installation guide](https://github.com/hoangsvit/google-ai/blob/main/docs/INSTALLATION.md) (Windows) or the [macOS guide](https://github.com/hoangsvit/google-ai/blob/main/docs/MACOS-PREVIEW.md).
+        **Do not post** Google account details, credentials, payment/card information, tokens, unredacted reports, or Android device identifiers.
+        Steps 2–5 can charge money. Support requests cannot confirm eligibility or guarantee a free subscription.
+        Vui lòng chỉ cung cấp lỗi đã che thông tin cá nhân, không chạy lại bước trả phí để kiểm tra.
+  - type: dropdown
+    id: platform
+    attributes:
+      label: "Operating system / Hệ điều hành"
+      options:
+        - Windows 11
+        - Windows 10
+        - macOS (Apple Silicon)
+        - macOS (Intel)
+        - Other / Khác
+    validations:
+      required: true
+  - type: dropdown
+    id: topic
+    attributes:
+      label: "What do you need help with? / Cần hỗ trợ gì?"
+      options:
+        - "Install Python or dependencies"
+        - "ADB not found / Device offline or unauthorized"
+        - "Emulator / Android root / Google apps"
+        - "Frida setup or compatibility"
+        - "Dashboard launch or controls"
+        - "Step 1 / List available offers"
+        - "Steps 2–5 / Guidance about errors"
+        - "Other / Khác"
+    validations:
+      required: true
+  - type: textarea
+    id: issue
+    attributes:
+      label: "Describe the problem / Mô tả vấn đề"
+      description: "Explain what you are trying to do and where you are stuck."
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: "Toolkit / Python / Android versions"
+      placeholder: "Include versions if known; otherwise write unknown."
+  - type: textarea
+    id: attempts
+    attributes:
+      label: "What have you tried? / Bạn đã thử cách nào?"
+      description: "Include commands used, but remove sensitive values first."
+    validations:
+      required: true
+  - type: textarea
+    id: error
+    attributes:
+      label: "Safe error message or screenshot / Lỗi hoặc ảnh đã che thông tin"
+      description: "Share only redacted excerpts, not complete reports, tokens, account emails, device serials, or payment data."
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: "Privacy check / Kiểm tra quyền riêng tư"
+      options:
+        - label: "I removed all sensitive account, payment, token, and device information / Tôi đã che thông tin nhạy cảm."
+          required: true
