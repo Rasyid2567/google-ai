@@ -4,7 +4,9 @@ Thanks for helping improve the Windows and macOS implementations of this toolkit
 
 ## Report an issue
 
-Use [GitHub Issues](https://github.com/hoangsvit/google-ai/issues) and include the command, Windows/Android version, relevant non-sensitive errors, and steps to reproduce. **Redact** Google account emails, passwords, payment details, offer/purchase tokens, device identifiers, and local credentials.
+Use the [guided issue templates](https://github.com/hoangsvit/google-ai/issues/new/choose) to choose **Bug report**, **Feature request**, **Setup & usage help**, or **Documentation & translation**. The forms support English and Vietnamese prompts and ask for relevant context such as Windows/macOS, Android/ADB/Frida, affected step, expected behavior, and sanitized errors.
+
+Search [existing issues](https://github.com/hoangsvit/google-ai/issues) before opening a new one. **Redact** Google account emails, passwords, payment details, offer/purchase tokens, device identifiers, and local credentials. Do not publish full unredacted logs or reports; do not repeat a paid checkout merely to reproduce a bug.
 
 ## Branches and releases
 
