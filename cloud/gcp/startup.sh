@@ -74,8 +74,8 @@ echo "Android boot completed (1 means booted):"
 adb -s 127.0.0.1:5555 shell getprop sys.boot_completed || true
 echo "Google Play Store package (not guaranteed by this demo image):"
 adb -s 127.0.0.1:5555 shell pm path com.android.vending || true
-echo "Root access (not guaranteed):"
-adb -s 127.0.0.1:5555 root || true
+echo "Current Android shell identity (does not elevate privileges):"
+adb -s 127.0.0.1:5555 shell id || true
 echo "Do not assume Google One or Frida compatibility from an emulator boot."
 CHECK_SCRIPT
 chmod 755 /usr/local/bin/eplus-ai-cloud-check
