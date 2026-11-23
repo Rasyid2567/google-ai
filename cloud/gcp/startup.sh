@@ -38,7 +38,7 @@ if [ ! -d /opt/eplus-ai-toolkit/.git ]; then
   git clone --no-checkout https://github.com/hoangsvit/google-ai.git /opt/eplus-ai-toolkit
 fi
 git -C /opt/eplus-ai-toolkit fetch --depth=1 origin "$GIT_REF"
-git -C /opt/eplus-ai-toolkit checkout --force --detach FETCH_HEAD
+git -C /opt/eplus-ai-toolkit checkout --detach FETCH_HEAD
 
 if [ ! -x /opt/eplus-ai-venv/bin/python ]; then
   python3 -m venv /opt/eplus-ai-venv
