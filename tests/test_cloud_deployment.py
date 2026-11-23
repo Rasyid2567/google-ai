@@ -1,6 +1,8 @@
 """Offline checks for cloud PoC deploy scripts; no GCP, Android or purchase calls."""
 from pathlib import Path
 import unittest
+import shutil
+import subprocess
 
 ROOT = Path(__file__).resolve().parents[1] / "cloud" / "gcp"
 
@@ -12,6 +14,11 @@ class CloudDeploymentContractTests(unittest.TestCase):
         cls.startup = (ROOT / "startup.sh").read_text(encoding="utf-8")
         cls.check = (ROOT / "check.sh").read_text(encoding="utf-8")
         cls.destroy = (ROOT / "destroy.sh").read_text(encoding="utf-8")
+
+    @unittest.skipUnless(shutil.which('bash'), 'bash not available on this CI host')
+    def test_shell_syntax(self):
+        for name in ('deploy.sh', 'startup.sh', 'check.sh', 'destroy.sh'):
+            subprocess.run(['bash', '-n', str(ROOT / name)], check=True)
 
     def test_nested_virtualization_and_cost_consent(self):
         self.assertIn("--enable-nested-virtualization", self.deploy)
