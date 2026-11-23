@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "📖 Installation & troubleshooting / Hướng dẫn cài đặt"
+    url: "https://github.com/hoangsvit/google-ai/blob/main/docs/INSTALLATION.md"
+    about: "Read setup and troubleshooting instructions before opening a support issue."
+  - name: "🔒 Security & billing precautions / Lưu ý bảo mật"
+    url: "https://github.com/hoangsvit/google-ai/blob/main/SECURITY.md"
+    about: "Never publish credentials, offer/purchase tokens, or payment information."
