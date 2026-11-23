@@ -1,0 +1,54 @@
+name: "📚 Documentation & translation / Tài liệu & bản dịch"
+description: "Propose corrections to guides, screenshots, translations, or examples / Góp ý tài liệu."
+title: "[Docs] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Help keep setup and safety guidance accurate across Windows, macOS, and supported languages.
+        Do not post unredacted personal information or payment data in screenshots or examples.
+  - type: dropdown
+    id: topic
+    attributes:
+      label: "Contribution type / Loại đóng góp"
+      options:
+        - "Incorrect or outdated instructions"
+        - "Missing troubleshooting guidance"
+        - "Translation correction"
+        - "Broken link or image"
+        - "New guide or example"
+        - "Other / Khác"
+    validations:
+      required: true
+  - type: input
+    id: page
+    attributes:
+      label: "Page or file / Trang hoặc tệp"
+      placeholder: "e.g. README.vi.md, docs/INSTALLATION.md, wiki URL"
+    validations:
+      required: true
+  - type: input
+    id: language
+    attributes:
+      label: "Language / Ngôn ngữ"
+      placeholder: "e.g. English, Tiếng Việt, 日本語"
+  - type: textarea
+    id: current
+    attributes:
+      label: "What is incorrect or missing? / Nội dung sai hoặc thiếu"
+    validations:
+      required: true
+  - type: textarea
+    id: proposed
+    attributes:
+      label: "Suggested wording or correction / Nội dung đề xuất"
+      description: "Include precise replacements or links where practical."
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: "Safety / An toàn"
+      options:
+        - label: "I will preserve the project's account, checkout and billing warnings / Tôi sẽ giữ nguyên các cảnh báo an toàn."
+          required: true
