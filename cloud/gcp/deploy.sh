@@ -48,7 +48,7 @@ if [ "$(printenv CONFIRM_COST || true)" != "yes" ]; then
   exit 2
 fi
 
-gcloud services enable compute.googleapis.com --project="$PROJECT_ID"
+gcloud services enable compute.googleapis.com iap.googleapis.com --project="$PROJECT_ID"
 if ! gcloud compute networks describe "$NETWORK" --project="$PROJECT_ID" >/dev/null 2>&1; then
   gcloud compute networks create "$NETWORK" --subnet-mode=custom --project="$PROJECT_ID" --quiet
 fi
