@@ -1,0 +1,58 @@
+name: "✨ Feature request / Đề xuất tính năng"
+description: "Suggest a feature or improvement / Đề xuất tính năng hoặc cải tiến."
+title: "[Feature] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Tell us the problem you want to solve and how the idea helps users.
+        This project cannot guarantee offer eligibility or subscription results. Suggestions must preserve explicit checkout confirmations and account/payment safety.
+        Mô tả nhu cầu và lợi ích, không đề xuất bỏ qua xác nhận thanh toán hay kiểm tra tài khoản.
+  - type: textarea
+    id: problem
+    attributes:
+      label: "Problem or use case / Vấn đề cần giải quyết"
+      placeholder: "When I ..., I need ... because ..."
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: "Proposed solution / Giải pháp đề xuất"
+      description: "Describe the user-facing behavior, not just implementation details."
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: "Affected area / Khu vực liên quan"
+      options:
+        - "Setup / ADB / Frida / Emulator"
+        - "Dashboard / Textual UI"
+        - "Step 0–1 / Environment and offers"
+        - "Steps 2–5 / Guided subscription flow"
+        - "macOS support"
+        - "Windows support"
+        - "Documentation / Translation"
+        - "Other / Khác"
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "Alternatives or workarounds / Giải pháp khác"
+      description: "Optional: describe what you have already tried."
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: "Acceptance criteria / Tiêu chí hoàn thành"
+      placeholder: "- [ ] User can ...\n- [ ] Error is explained clearly ..."
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: "Before submitting / Trước khi gửi"
+      options:
+        - label: "I searched existing issues / Tôi đã kiểm tra issue tương tự."
+          required: true
+        - label: "My suggestion does not bypass account/offer validation or checkout approvals / Đề xuất không bỏ qua bước xác minh hoặc xác nhận thanh toán."
+          required: true
