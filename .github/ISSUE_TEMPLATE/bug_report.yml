@@ -1,0 +1,99 @@
+name: "🐛 Bug report / Báo lỗi"
+description: "Report a reproducible problem in ePlus AI Toolkit / Báo lỗi có thể tái hiện."
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a bug. Please search existing issues first.
+        **Privacy:** Do not share Google account emails, credentials, passwords, payment/card details, offer or purchase tokens, full unredacted reports, device IDs, or private logs/screenshots.
+        **Billing:** Steps 2–5 may initiate real charges. Do not repeat a checkout just to reproduce a bug.
+        Tiếng Việt: Vui lòng che thông tin cá nhân và thanh toán; không chạy lại bước thanh toán chỉ để tái hiện lỗi.
+  - type: dropdown
+    id: platform
+    attributes:
+      label: "Operating system / Hệ điều hành"
+      options:
+        - Windows 11
+        - Windows 10
+        - macOS (Apple Silicon)
+        - macOS (Intel)
+        - Other / Khác
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: "Toolkit version or commit / Phiên bản"
+      description: "Release tag or Git commit SHA; write 'unknown' if you do not know."
+      placeholder: "e.g. main @ abc1234, v1.x, or unknown"
+    validations:
+      required: true
+  - type: dropdown
+    id: step
+    attributes:
+      label: "Affected step / Bước bị lỗi"
+      options:
+        - "Startup / Dashboard"
+        - "Step 0 — Environment"
+        - "Step 1 — Available offers"
+        - "Step 2 — Pro 12 months"
+        - "Step 3 — Pro +6 months"
+        - "Step 4 — Second Pro +6 months"
+        - "Step 5 — Optional +6 months"
+        - "Not sure / Không rõ"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: "Android / emulator / Python / ADB / Frida versions"
+      description: "Include only non-sensitive versions and setup details, if known."
+      placeholder: "e.g. Android 12, MuMu, Python 3.11, Frida 16.5.9"
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: "Steps to reproduce / Các bước tái hiện"
+      description: "List steps up to the failure. Do not perform or repeat a real checkout to reproduce it."
+      placeholder: "1. Open the dashboard\n2. Select ...\n3. Observe ..."
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: "Actual result / Kết quả thực tế"
+      placeholder: "Describe the error message and what happened."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: "Expected result / Kết quả mong đợi"
+    validations:
+      required: true
+  - type: dropdown
+    id: checkout
+    attributes:
+      label: "Was a Google Play checkout opened? / Có mở thanh toán không?"
+      options:
+        - "No / Không"
+        - "Yes / Có"
+        - "Not sure / Không chắc"
+        - "Not applicable / Không áp dụng"
+    validations:
+      required: true
+  - type: textarea
+    id: sanitized-logs
+    attributes:
+      label: "Sanitized error output / Log đã ẩn thông tin nhạy cảm"
+      description: "Paste only relevant redacted lines. Never attach full reports or account/device identifiers."
+      render: text
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: "Before submitting / Trước khi gửi"
+      options:
+        - label: "I searched existing issues / Tôi đã tìm issue tương tự."
+          required: true
+        - label: "I removed all private account, payment, token, and device data / Tôi đã che dữ liệu nhạy cảm."
+          required: true
