@@ -194,7 +194,10 @@ if ($useTui) {
             exit 1
         }
     }
-    $tuiArgs = @((Join-Path $PSScriptRoot "tui.py"), "--step", [string]$(if ($AllStages) { $StartStep } else { $Step }))
+    $tuiArgs = @((Join-Path $PSScriptRoot "tui.py"))
+    if ($AllStages -or $PSBoundParameters.ContainsKey("Step")) {
+        $tuiArgs += @("--step", [string]$(if ($AllStages) { $StartStep } else { $Step }))
+    }
     if ($AllStages) { $tuiArgs += "--sequence" }
     if ($ShowDebug) { $tuiArgs += "--debug" }
     & $pythonPath @tuiArgs

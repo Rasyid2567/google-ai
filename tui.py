@@ -32,8 +32,29 @@ from offer_discovery import (ExtraOffer, parse_step1, parse_sku_check,
 from tui_core import STAGES, Outcome, command_for_step, mask_email, \
     needs_setup, offer_explorer_lines, outcome_for_stage, read_fresh_report, cli_issue_outcome, \
     readable_issue_line, report_summary, safe_launch_diagnostic, validate_step
+from tui_core import observed_offers, offer_step, runnable_offer_step
 from device_diagnostics import ConnectionDiagnosis, ConnectionStatus, inspect_connection, poll_connection
-from stage_history import latest_history, read_history, record_history
+from stage_history import latest_history, read_history, record_history, read_offer_history, record_offer_scan
+
+
+class OfferRow(Horizontal):
+    def __init__(self, offer: dict, *, current: bool, ran: bool, enabled: bool) -> None:
+        super().__init__(classes="offer-row")
+        self.step = offer_step(offer)
+        name = STAGES[self.step].label if self.step is not None else f"{offer['product']} / {offer['id']}"
+        source = "Latest scan" if current else "Earlier scan"
+        attempt = "Run recorded · Outcome unverified" if ran else "Not run"
+        period = offer["period"]
+        micros = offer["micros"]
+        phase = "Zero first phase" if micros == "0" else "Nonzero first phase" if micros else "Price unknown"
+        self.description = f"{name} · {period}\n{source} · {phase} · {attempt}"
+        self.ran = ran
+        self.enabled = enabled
+
+    def compose(self) -> ComposeResult:
+        yield Static(self.description, markup=False)
+        if self.step is not None:
+            yield Button("Run again" if self.ran else "Run", classes="offer-run", disabled=not self.enabled)
 
 
 class TechnicalLog(RichLog):
@@ -343,6 +364,23 @@ class GoogleAITUI(App[None]):
         border: round #285a80; background: #081a2d;
     }
     #elapsed, #activity { color: #95c4dd; }
+    #offer_history { height: auto; }
+    .offer-row { height: auto; min-height: 3; background: #12263d; margin-bottom: 1; }
+    .offer-row Static { width: 1fr; height: auto; padding: 0 1; }
+    .offer-row Button { width: 13; min-width: 13; height: 3; }
+    Screen.offer-dashboard #content { layout: vertical; }
+    Screen.offer-dashboard #controls { dock: bottom; layout: horizontal; width: 100%; min-width: 0; height: 3; padding: 0; border: none; margin: 0; }
+    Screen.offer-dashboard #controls Button { width: 1fr; min-width: 0; height: 3; }
+    Screen.offer-dashboard #controls .section, Screen.offer-dashboard #workflow { display: none; }
+    Screen.offer-dashboard #results { width: 100%; margin-left: 0; }
+    Screen.offer-dashboard #welcome_panel { min-height: 0; max-height: 100%; padding: 0 1; }
+    Screen.offer-dashboard #offer_toolbar { height: 3; align: left middle; }
+    Screen.offer-dashboard #offer_toolbar #welcome { width: 1fr; display: block; }
+    Screen.offer-dashboard #quickstart { width: 25; min-width: 0; }
+    Screen.offer-dashboard #status_panel { height: auto; min-height: 0; }
+    Screen.offer-dashboard #history, Screen.offer-dashboard #activity,
+    Screen.offer-dashboard #advanced_toggle, Screen.offer-dashboard #quick_hint,
+    Screen.offer-dashboard #hint { display: none; }
     #debug_log {
         display: none; height: 7;
         border: round #294b67; background: #071528;
@@ -385,7 +423,7 @@ class GoogleAITUI(App[None]):
 
     def __init__(self, *, repo: Path, selected_step: int = 1,
                  start_sequence: bool = False, initial_debug: bool = False,
-                 show_advanced: bool = False) -> None:
+                 show_advanced: bool = False, offer_dashboard: bool = False) -> None:
         super().__init__()
         self.repo = repo.resolve()
         self.initial_step = validate_step(selected_step)
@@ -394,6 +432,9 @@ class GoogleAITUI(App[None]):
         self.native_mode = self.macos_mode or self.linux_mode
         self.start_sequence = start_sequence
         self.show_advanced = show_advanced
+        self.offer_dashboard = offer_dashboard
+        self._current_offers: list[dict] = []
+        self._catalog_account = ""
         self.debug_visible = initial_debug
         self.busy = False
         self._diagnosing = False
@@ -436,13 +477,14 @@ class GoogleAITUI(App[None]):
         with Vertical(id="screen"):
             with Horizontal(id="brand"):
                 yield Static("Support: ", id="support_label")
-                yield Link("https://t.me/eplus_news", url="https://t.me/eplus_news",
+                yield Link("Telegram" if self.offer_dashboard else "https://t.me/eplus_news", url="https://t.me/eplus_news",
                            tooltip="Telegram support channel", id="support_link")
             with Horizontal(id="credit"):
-                yield Static("  Original ")
-                yield Link("@gylive", url="https://github.com/gylive",
-                           tooltip="Original author on GitHub", id="original_author")
-                yield Static("  |  Maintained ")
+                if not self.offer_dashboard:
+                    yield Static("  Original ")
+                    yield Link("@gylive", url="https://github.com/gylive",
+                               tooltip="Original author on GitHub", id="original_author")
+                yield Static("  Maintained ")
                 yield Link("@hoangsvit", url="https://github.com/hoangsvit",
                            tooltip="Maintainer on GitHub", id="maintainer")
             with Horizontal(id="details"):
@@ -457,21 +499,26 @@ class GoogleAITUI(App[None]):
                             yield Static(f"○  {stage.number}. {stage.label}",
                                          id=f"stage_{stage.number}", classes="workflow-step")
                     yield Button("Help & Guide", id="nav_help")
-                    yield Button("Diagnose Android connection", id="diagnose")
+                    yield Button("Diagnose" if self.offer_dashboard else "Diagnose Android connection", id="diagnose")
                     yield Button("Show technical details", id="debug")
                     yield Button("Reload toolkit", id="reload")
                     yield Button("Exit toolkit", id="exit")
                 with Vertical(id="results"):
                     yield TechnicalLog(id="debug_log", wrap=True, highlight=False, markup=False)
                     with Vertical(id="welcome_panel"):
-                        yield Static(
-                            "GET STARTED · OFFER CHECK" if self.linux_mode
-                            else "GET STARTED · READ-ONLY CHECK", id="welcome")
+                        if self.offer_dashboard:
+                            with Horizontal(id="offer_toolbar"):
+                                yield Static("Offer History", id="welcome")
+                                yield Button("Check Device & Offers", id="quickstart", variant="success")
+                        else:
+                            yield Static(
+                                "GET STARTED · OFFER CHECK" if self.linux_mode
+                                else "GET STARTED · READ-ONLY CHECK", id="welcome")
+                            yield Button("Check Device & Offers", id="quickstart", variant="success")
                         yield Static(
                             "Check Android offers without opening checkout." if self.linux_mode
                             else "Check MuMu connection and Google AI offers without opening checkout.",
                             id="quick_hint")
-                        yield Button("Check Device & Offers", id="quickstart", variant="success")
                         yield Button("Stop after current step", id="stop", disabled=True)
                         yield Button("Verified in Google Play → Next", id="next", disabled=True)
                         yield Button("Choose another step  +", id="advanced_toggle")
@@ -510,6 +557,8 @@ class GoogleAITUI(App[None]):
                         yield Button("Completed action on Android", id="manual", disabled=True)
                         yield Static("Review Google Play pricing and renewal terms "
                                      "before each checkout.", id="hint")
+                    if self.offer_dashboard:
+                        yield Vertical(id="offer_history")
         yield Footer()
 
     def on_resize(self, event) -> None:
@@ -606,6 +655,10 @@ class GoogleAITUI(App[None]):
         self._offer_check_ready = False
         self._initial_offer_ready = False
         self._offer_ready_device = None
+        if self.offer_dashboard:
+            self._catalog_account = account
+            self._current_offers = []
+            self.call_later(self._render_offer_history)
         self.query_one("#account", Static).update("Account  •  " + escape(mask_email(account)) + " (selected)")
         self.query_one("#quickstart", Button).label = "Check Device & Offers"
         self._update_run_mode()
@@ -631,6 +684,9 @@ class GoogleAITUI(App[None]):
         self._offer_ready_device = None
         self.query_one("#quickstart", Button).label = "Check Device & Offers"
         self._diagnosing = True
+        if self.offer_dashboard:
+            self._current_offers = []
+            self.call_later(self._render_offer_history)
         self.query_one("#diagnose", Button).disabled = True
         self.query_one("#quickstart", Button).disabled = True
         self.query_one("#quickstart", Button).display = True
@@ -669,6 +725,9 @@ class GoogleAITUI(App[None]):
         self._update_run_mode()
 
     def on_mount(self) -> None:
+        if self.offer_dashboard:
+            self.screen.add_class("offer-dashboard")
+            self.call_after_refresh(self.quickstart_pressed)
         self._render_history(latest_history(self.repo),
                              "Previous run · select an account and run Step 1 to verify")
         self.set_interval(1, self._refresh_elapsed)
@@ -755,6 +814,9 @@ class GoogleAITUI(App[None]):
             self._extra_scan_generation += 1
             self._update_discovered([], replace=True)
             self.sequence = False
+            if self.offer_dashboard and self._current_offers:
+                self._current_offers = []
+                self.call_later(self._render_offer_history)
             self.query_one("#next", Button).display = False
             self.query_one("#next", Button).disabled = True
             self.query_one("#quickstart", Button).display = True
@@ -777,6 +839,8 @@ class GoogleAITUI(App[None]):
 
     @on(Button.Pressed, "#advanced_toggle")
     def advanced_pressed(self) -> None:
+        if self.offer_dashboard:
+            return
         self.advanced_visible = not self.advanced_visible
         panel = self.query_one("#workflow_actions", Vertical)
         panel.display = self.advanced_visible
@@ -876,7 +940,8 @@ class GoogleAITUI(App[None]):
         self.query_one("#mode_hint", Static).update(hint)
 
     def action_toggle_advanced(self) -> None:
-        self.advanced_pressed()
+        if not self.offer_dashboard:
+            self.advanced_pressed()
 
     def _refresh_elapsed(self) -> None:
         # Textual may fire a queued interval while the screen is unmounting.
@@ -971,7 +1036,7 @@ class GoogleAITUI(App[None]):
         self._update_run_mode()
 
     def _confirm_stage(self, step: int, sequence: bool,
-                       previous_verified: bool = False) -> None:
+                       previous_verified: bool = False, *, retry: bool = False) -> None:
         if self.busy or self._diagnosing:
             return
         if step >= 5:
@@ -1032,8 +1097,8 @@ class GoogleAITUI(App[None]):
         if previous_verified:
             message = ("Confirm the previous stage ACTUALLY changed the Google Play "
                        "subscription/renewal date. " + message)
-        if step >= 2 and step == self.current_step and self._last_outcome and self._last_outcome.code not in (
-                "listed", "environment_ok", "checkout_requested"):
+        if retry or (step >= 2 and step == self.current_step and self._last_outcome
+                     and self._last_outcome.code not in ("listed", "environment_ok", "checkout_requested")):
             message = ("RETRY SAFETY: Check Google Play subscriptions, pending transactions "
                        "and payment history first. Do not repeat if a transaction is "
                        "pending or the plan already changed. This retries only the "
@@ -1110,10 +1175,42 @@ class GoogleAITUI(App[None]):
 
     @on(Button.Pressed, "#quickstart")
     def quickstart_pressed(self) -> None:
-        if self._initial_offer_ready and self._offer_check_ready:
+        if not self.offer_dashboard and self._initial_offer_ready and self._offer_check_ready:
             self._confirm_stage(2, True)
         else:
             self._confirm_stage(1, False)
+
+    @on(Button.Pressed, ".offer-run")
+    def offer_pressed(self, event: Button.Pressed) -> None:
+        row = event.button.parent
+        if (isinstance(row, OfferRow) and not event.button.disabled and row.step is not None
+                and self._catalog_account == self._offer_ready_account
+                and any(runnable_offer_step(item) == row.step for item in self._current_offers)):
+            self._confirm_stage(row.step, False, retry=row.ran)
+
+    async def _render_offer_history(self) -> None:
+        account = self._catalog_account
+        saved_records = read_offer_history(self.repo, account)
+        saved = {(item["product"], item["id"]): item for item in observed_offers(saved_records)}
+        current = {(item["product"], item["id"]): item for item in self._current_offers}
+        ran = {item.get("step") for item in read_history(self.repo, account) if isinstance(item, dict)
+               and item.get("status") == "started"}
+        ran.update(offer_step(item) for item in observed_offers(
+            [record for record in saved_records if record.get("ran") is True]))
+        ran.discard(None)
+        rows = []
+        for key, item in {**current, **{key: item for key, item in saved.items() if key not in current}}.items():
+            fresh = key in current
+            rows.append(OfferRow(item, current=fresh, ran=offer_step(item) in ran,
+                                 enabled=fresh and runnable_offer_step(item) is not None
+                                 and self._offer_check_ready and not self.busy
+                                 and not self._diagnosing and account == self._offer_ready_account))
+        container = self.screen_stack[0].query_one("#offer_history", Vertical)
+        await container.remove_children()
+        if rows:
+            await container.mount(*rows)
+        else:
+            await container.mount(Static("Offer history appears after the first scan."))
 
     @on(Button.Pressed, "#refresh_offers")
     def refresh_offers_pressed(self) -> None:
@@ -1121,7 +1218,7 @@ class GoogleAITUI(App[None]):
 
     @on(Button.Pressed, "#run")
     def selected_pressed(self) -> None:
-        if self.busy or self._diagnosing:
+        if self.offer_dashboard or self.busy or self._diagnosing:
             return
         mode = self.query_one("#mode", Select).value
         if self._selected() >= 5:
@@ -1140,6 +1237,8 @@ class GoogleAITUI(App[None]):
 
     @on(Button.Pressed, "#sequence")
     def sequence_pressed(self) -> None:
+        if self.offer_dashboard:
+            return
         step = self._selected()
         if step >= 5:
             self._confirm_stage(step, False)
@@ -1285,7 +1384,8 @@ class GoogleAITUI(App[None]):
         )
 
     def action_run_selected(self) -> None:
-        self.selected_pressed()
+        if not self.offer_dashboard:
+            self.selected_pressed()
 
     def action_quit_safely(self) -> None:
         if not self.busy:
@@ -1325,6 +1425,13 @@ class GoogleAITUI(App[None]):
         self._invalidate_connection_polls()
         self._history_account = self._selected_account or self._offer_ready_account
         self._save_history(self._history_account, step, "started")
+        if self.offer_dashboard and step >= 2:
+            try:
+                record_offer_scan(self.repo, self._catalog_account, [
+                    {**offer, "ran": True} for offer in self._current_offers
+                    if runnable_offer_step(offer) == step])
+            except OSError:
+                self.notify("Could not save local offer history.", severity="warning")
         self._checked_device = None
         if step <= 1:
             self._extra_scan_generation += 1
@@ -1342,6 +1449,9 @@ class GoogleAITUI(App[None]):
             self._initial_offer_ready = False
         self.query_one("#quickstart", Button).label = "Check Device & Offers"
         self.busy = True
+        if self.offer_dashboard:
+            for button in self.query(".offer-run").results(Button):
+                button.disabled = True
         self.query_one("#reload", Button).disabled = True
         self.query_one("#refresh_offers", Button).disabled = True
         self.sequence = sequence
@@ -1699,7 +1809,9 @@ class GoogleAITUI(App[None]):
         self.query_one("#choose_account", Button).disabled = self._accounts_loading
         self.query_one("#quickstart", Button).disabled = False
         self.query_one("#quickstart", Button).label = (
-            "Continue to Step 2" if self._initial_offer_ready else "Check Device & Offers"
+            "Scan again" if self.offer_dashboard and step == 1 and outcome.code == "listed"
+            else "Continue to Step 2" if not self.offer_dashboard and self._initial_offer_ready
+            else "Check Device & Offers"
         )
         self.query_one("#diagnose", Button).disabled = False
         self.query_one("#run", Button).disabled = False
@@ -1737,6 +1849,18 @@ class GoogleAITUI(App[None]):
                     self.query_one("#account", Static).update(
                         "Account  •  " + escape(mask_email(detected))
                     )
+        if self.offer_dashboard:
+            if step == 1:
+                self._current_offers = observed_offers((report or {}).get("offers")) if outcome.code == "listed" else []
+                if outcome.code == "listed":
+                    self._catalog_account = self._offer_ready_account or ""
+                    try:
+                        record_offer_scan(self.repo, self._catalog_account, self._current_offers)
+                    except OSError:
+                        self.notify("Could not save local offer history.", severity="warning")
+            elif not self._offer_check_ready:
+                self._current_offers = []
+            self.call_later(self._render_offer_history)
         if outcome.can_review and self.sequence and step < 4 and not self._stop_after_step:
             self.query_one("#next", Button).disabled = False
             self.query_one("#next", Button).display = True
@@ -1749,10 +1873,10 @@ class GoogleAITUI(App[None]):
         if self._exit_after_step:
             self.exit()
             return
-        if step == 1 and self._initial_offer_ready:
+        if not self.offer_dashboard and step == 1 and self._initial_offer_ready:
             self.push_screen(CheckComplete(), lambda proceed: self._confirm_stage(2, True) if proceed else None)
             return
-        if step == 1 and outcome.code == "listed" and not self._initial_offer_ready:
+        if not self.offer_dashboard and step == 1 and outcome.code == "listed" and not self._initial_offer_ready:
             self.push_screen(SetupNotice("Review the offer check", instruction))
             return
         if step <= 1 and outcome.code not in ("listed", "environment_ok", "cancelled"):
@@ -1781,7 +1905,8 @@ def main(argv: list[str] | None = None) -> int:
         parser.error(str(exc))
     GoogleAITUI(repo=Path(__file__).resolve().parent, selected_step=selected,
                 start_sequence=args.sequence, initial_debug=args.debug,
-                show_advanced=linux and (args.step is not None or args.sequence)).run()
+                show_advanced=linux and (args.step is not None or args.sequence),
+                offer_dashboard=args.step is None and not args.sequence).run()
     return 0
 
 

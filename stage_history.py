@@ -25,6 +25,8 @@ def latest_history(repo: Path) -> list:
         paths = sorted((repo / "logs" / "stage-history").glob("*.json"),
                        key=lambda path: path.stat().st_mtime_ns, reverse=True)
         for path in paths:
+            if path.name.endswith(".offers.json"):
+                continue
             data = json.loads(path.read_text(encoding="utf-8"))
             if isinstance(data, list) and data:
                 return data
@@ -33,11 +35,8 @@ def latest_history(repo: Path) -> list:
     return []
 
 
-def record_history(repo: Path, account: str, step: int, status: str) -> None:
-    path = history_path(repo, account)
+def _write_history(path: Path, entries: list) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    entries = read_history(repo, account)[-99:]
-    entries.append({"step": step, "status": status, "at": time.strftime("%Y-%m-%d %H:%M:%S")})
     temporary = None
     try:
         with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
@@ -48,3 +47,27 @@ def record_history(repo: Path, account: str, step: int, status: str) -> None:
     finally:
         if temporary and os.path.exists(temporary):
             os.unlink(temporary)
+
+
+def record_history(repo: Path, account: str, step: int, status: str) -> None:
+    entries = read_history(repo, account)[-99:]
+    entries.append({"step": step, "status": status, "at": time.strftime("%Y-%m-%d %H:%M:%S")})
+    _write_history(history_path(repo, account), entries)
+
+
+def read_offer_history(repo: Path, account: str) -> list[dict]:
+    path = history_path(repo, account).with_suffix(".offers.json")
+    try:
+        items = json.loads(path.read_text(encoding="utf-8"))
+        return [item for item in items if isinstance(item, dict)] if isinstance(items, list) else []
+    except (OSError, ValueError):
+        return []
+
+
+def record_offer_scan(repo: Path, account: str, offers: list[dict]) -> None:
+    entries = {(item["product"], item["id"]): item for item in read_offer_history(repo, account)
+               if isinstance(item.get("product"), str) and isinstance(item.get("id"), str)}
+    for item in offers:
+        key = item["product"], item["id"]
+        entries[key] = {**entries.get(key, {}), **item}
+    _write_history(history_path(repo, account).with_suffix(".offers.json"), list(entries.values()))

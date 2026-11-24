@@ -138,7 +138,11 @@ The `main` branch is the stable entrypoint for Linux after this integration merg
 
 ## Use the dashboard (recommended)
 
-### Start with Check Device & Offers
+The default dashboard automatically runs **Step 1** on startup. It lists offers without starting checkout, though its environment checks can prepare ADB and Frida. Use **Scan again** to refresh the **Offer History** list. The toolkit keeps previously observed offers locally, with separate history for verified accounts and for scans where the account could not be verified. Only supported offers from a fresh, verified scan can be run. **Run** and **Run again** each open a separate confirmation because a run can incur charges. A recorded run means an attempt started. Check the subscription, charges and renewal date in Google Play to verify the outcome.
+
+The step selection and guided-sequence controls below apply when the dashboard is opened with an explicit step or sequence option. The default dashboard uses the individual offer buttons.
+
+### Start with Check Device & Offers in the explicit step dashboard
 
 1. Click **Check Device & Offers** on the welcome screen. It invokes **Step 1 — Available offers**, intended to *list* offers rather than initiate checkout.
 2. Watch **Live Status** for the stage, elapsed time, current activity and result. **Show technical details** reveals execution output. A warning after 30 seconds without new output indicates inactivity, **not proof of a hang**.

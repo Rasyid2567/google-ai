@@ -1,6 +1,6 @@
 # ePlus AI Toolkit — 日本語
 
-<!-- Source README.md git-blob: e63f8d102d72e57f7bceaaaa00b41357779c8ed3 -->
+<!-- Source README.md git-blob: 3d2463a6568fef2adb5aafc86760c103aec1756e -->
 
 [English](README.md) · [Tiếng Việt](README.vi.md) · [简体中文](README.zh-CN.md) · **日本語** · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md)
 
@@ -130,6 +130,10 @@ sh run-linux.sh
 
 
 ## 3. ダッシュボードの使い方
+
+標準のダッシュボードは起動時に **Step 1** を実行してオファーを照会します。ADB や Frida の準備が行われる場合がありますが、購入処理は開始しません。**Scan again** で **Offer History** を更新できます。過去に取得したオファーは確認済みのアカウントごとに端末に保存し、アカウントを確認できなかった照会は別に保存します。実行できるのは、最新の確認済みの照会で見つかった対応オファーです。**Run** と **Run again** は費用が発生する可能性があるため、毎回確認が必要です。履歴には実行を試みたことが記録されます。契約、料金、更新日は Google Play で確認してください。
+
+以下のステップ選択とガイド付き実行は、ステップまたは連続実行を指定して起動した画面に適用されます。標準の画面では、オファーごとのボタンを使用します。
 
 ステップの実行中は、**Check Device & Offers**、**Run**、実行モードやステップの切り替えを一時的に無効にし、複数の処理が同時に始まらないようにします。Step 0 ではローカル設定が変更される場合があります。Step 1 は購入を開始しませんが、事前準備で ADB / Frida の設定が変わることがあります。次に進む前に Google Play で結果を確認してください。**Stop や Exit では、送信済みの決済を取り消せません。**
 

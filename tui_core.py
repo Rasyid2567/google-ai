@@ -470,6 +470,32 @@ def _offer_field(value: object) -> str:
     return text if _SAFE_OFFER_FIELD.fullmatch(text) else "(unavailable)"
 
 
+def observed_offers(value: object) -> list[dict]:
+    """Keep only documented first-phase metadata from a listing."""
+    items = {}
+    for offer in value if isinstance(value, list) else []:
+        if not isinstance(offer, dict):
+            continue
+        product = _offer_field(offer.get("product"))
+        offer_id = _offer_field(offer.get("id"))
+        micros = str(offer.get("micros"))
+        key = product, offer_id
+        items[key] = {"product": product, "id": offer_id, "period": _offer_field(offer.get("period")),
+                      "micros": micros if re.fullmatch(r"[0-9]{1,18}", micros) else None}
+    return list(items.values())
+
+
+def offer_step(offer: dict) -> int | None:
+    if offer["product"] != "g1.2tb.ai.subs_variant":
+        return None
+    return {"12months-eft": 2, "6months-eft": 3, "6months-eft-2": 4,
+            "6months-eft-ss-2026": 5}.get(offer["id"])
+
+
+def runnable_offer_step(offer: dict) -> int | None:
+    return offer_step(offer) if offer["micros"] == "0" else None
+
+
 def offer_explorer_lines(report: dict | None, limit: int = 20) -> list[str]:
     """Format observed introductory phases; never infer eligibility or renewal.
 

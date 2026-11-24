@@ -1,6 +1,6 @@
 # ePlus AI Toolkit — 简体中文
 
-<!-- Source README.md git-blob: e63f8d102d72e57f7bceaaaa00b41357779c8ed3 -->
+<!-- Source README.md git-blob: 3d2463a6568fef2adb5aafc86760c103aec1756e -->
 
 [English](README.md) · [Tiếng Việt](README.vi.md) · **简体中文** · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md)
 
@@ -130,6 +130,10 @@ sh run-linux.sh
 
 
 ## 3. Textual 界面
+
+默认界面启动后会自动运行 **Step 1** 查询优惠。此步骤可能准备 ADB 和 Frida，但不会发起结账。点击 **Scan again** 可更新 **Offer History**。工具会在本机保留曾查到的优惠，按已验证的账号分别保存，账号未验证的查询另行保存。只有最新一次通过验证的查询中受支持的优惠才能运行。**Run** 和 **Run again** 每次都需要单独确认，因为可能产生费用。运行记录只表示已开始尝试，请到 Google Play 核实订阅、费用和续订日期。
+
+下文的步骤选择和引导流程适用于通过明确的步骤或流程选项打开的界面。默认界面使用各优惠旁的按钮。
 
 在某个步骤运行期间，**Check Device & Offers**、**Run** 以及模式和步骤选择功能会暂时锁定，避免重复执行。Step 0 可能修改电脑上的设置；Step 1 虽不会主动付款，但在准备过程中可能调整 ADB/Frida。请先到 Google Play 核实结果，再进入下一步。**点击 Stop 或 Exit 并不能撤销已提交的交易。**
 

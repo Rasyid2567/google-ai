@@ -1,0 +1,72 @@
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import patch
+
+from textual.widgets import Button
+
+from device_diagnostics import ConnectionStatus
+from stage_history import read_offer_history
+from tui import Approval, GoogleAITUI, OfferRow
+from tui_core import outcome_for_stage
+
+
+class OfferDashboardTests(unittest.IsolatedAsyncioTestCase):
+    async def test_scan_run_cancel_retry_and_history(self):
+        account = "fixture@example.com"
+        product = "g1.2tb.ai.subs_variant"
+        initial = {"product": product, "id": "12months-eft", "micros": 0, "period": "P1Y"}
+        extension = {"product": product, "id": "6months-eft", "micros": 0, "period": "P6M"}
+        with tempfile.TemporaryDirectory() as directory:
+            repo = Path(directory)
+            for size in ((90, 20), (110, 35)):
+                with self.subTest(size=size):
+                    app = GoogleAITUI(repo=repo, offer_dashboard=True)
+                    app.linux_mode = False
+                    with patch.object(app, "run_stage") as worker, patch.object(app, "_poll_connection"):
+                        async with app.run_test(size=size) as pilot:
+                            await pilot.pause()
+                            worker.assert_called_once_with(1)
+                            self.assertTrue(app.query_one("#status_panel").region.height > 0)
+                            self.assertLess(app.query_one("#status_panel").region.y, size[1] - 4)
+                            self.assertFalse(app.query_one("#advanced_toggle").display)
+
+                            def finish_scan(offers):
+                                app._verified_account = account
+                                app._checked_device = "test-device"
+                                app._connection_state = ConnectionStatus("connected", ("test-device",))
+                                report = {"offers": offers, "status": "listed"}
+                                app._finished(1, outcome_for_stage(1, 0, report), report)
+
+                            finish_scan([initial, extension])
+                            await pilot.pause()
+                            rows = list(app.query(OfferRow))
+                            self.assertEqual([row.step for row in rows], [2, 3])
+                            button = rows[0].query_one(Button)
+                            button.press()
+                            await pilot.pause()
+                            self.assertIsInstance(app.screen, Approval)
+                            app.screen.dismiss(False)
+                            await pilot.pause()
+                            self.assertEqual(worker.call_count, 1)
+                            button.press()
+                            await pilot.pause()
+                            app.screen.dismiss(True)
+                            await pilot.pause()
+                            worker.assert_called_with(2)
+                            self.assertFalse(app.sequence)
+                            self.assertTrue(all(widget.disabled for widget in app.query(".offer-run")))
+                            app._finished(2, outcome_for_stage(2, 1, None), None)
+                            await pilot.pause()
+                            self.assertEqual(str(app.query(OfferRow).first().query_one(Button).label), "Run again")
+
+                            app.quickstart_pressed()
+                            finish_scan([initial])
+                            await pilot.pause()
+                            rows = list(app.query(OfferRow))
+                            self.assertIn("Earlier scan", rows[1].description)
+                            self.assertTrue(rows[1].query_one(Button).disabled)
+                            saved = read_offer_history(repo, account)
+                            self.assertEqual(len(saved), 2)
+                            self.assertTrue(next(item["ran"] for item in saved if item["id"] == initial["id"]))
+                            self.assertEqual(read_offer_history(repo, "other@example.com"), [])

@@ -1,6 +1,6 @@
 # ePlus AI Toolkit — Español
 
-<!-- Source README.md git-blob: e63f8d102d72e57f7bceaaaa00b41357779c8ed3 -->
+<!-- Source README.md git-blob: 3d2463a6568fef2adb5aafc86760c103aec1756e -->
 
 [English](README.md) · [Tiếng Việt](README.vi.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · **Español** · [Français](README.fr.md)
 
@@ -131,6 +131,10 @@ Usa una versión que incluya `run-linux.sh`. El script abre el panel e instala l
 
 
 ## 3. Usar el panel Textual
+
+El panel predeterminado ejecuta **Step 1** al abrirse para consultar las ofertas. Puede preparar ADB y Frida, pero no inicia un pago. Pulsa **Scan again** para actualizar **Offer History**. La herramienta guarda en el equipo las ofertas detectadas, por cuenta verificada y por separado si no se pudo verificar la cuenta. Solo pueden ejecutarse las ofertas compatibles de una consulta reciente y verificada. **Run** y **Run again** requieren una confirmación en cada intento porque pueden generar cargos. El historial solo registra que se inició un intento. Comprueba la suscripción, los cargos y la fecha de renovación en Google Play.
+
+La selección de pasos y la secuencia guiada que se describen a continuación están disponibles al abrir el panel con una opción explícita de paso o secuencia. El panel predeterminado usa los botones de cada oferta.
 
 Mientras se ejecuta un paso, se desactivan **Check Device & Offers**, **Run** y los controles para cambiar de modo o de paso, de modo que no se inicien varias acciones a la vez. El paso 0 puede cambiar ajustes del equipo y el paso 1, aunque no realiza compras, puede preparar ADB/Frida. Antes de continuar con **Next**, comprueba el resultado en Google Play. **Detener o cerrar la aplicación no anula un pago ya enviado.**
 

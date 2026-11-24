@@ -1,6 +1,6 @@
 # ePlus AI Toolkit — Tiếng Việt
 
-<!-- Source README.md git-blob: e63f8d102d72e57f7bceaaaa00b41357779c8ed3 -->
+<!-- Source README.md git-blob: 3d2463a6568fef2adb5aafc86760c103aec1756e -->
 
 [English](README.md) · **Tiếng Việt** · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md)
 
@@ -132,6 +132,10 @@ Dùng phiên bản có tệp `run-linux.sh`. Tập lệnh mở giao diện và c
 
 
 ## 3. Sử dụng giao diện
+
+Giao diện mặc định tự chạy **Step 1** khi mở để dò ưu đãi. Bước này có thể chuẩn bị ADB và Frida nhưng không khởi tạo thanh toán. Chọn **Scan again** để cập nhật **Offer History**. Công cụ lưu các ưu đãi từng thấy trên máy, tách riêng theo tài khoản đã xác minh và tách khỏi những lần quét chưa xác minh được tài khoản. Bạn chỉ có thể chạy ưu đãi được hỗ trợ trong lần quét mới đã xác minh. **Run** và **Run again** đều yêu cầu xác nhận riêng vì mỗi lần chạy có thể phát sinh phí. Lịch sử chỉ ghi nhận lần thực hiện. Hãy kiểm tra gói, khoản phí và ngày gia hạn trên Google Play để biết kết quả.
+
+Các mục chọn bước và chạy tuần tự dưới đây áp dụng khi mở giao diện với tùy chọn bước hoặc chuỗi bước. Giao diện mặc định dùng nút trên từng ưu đãi.
 
 Nhấn **Check Device & Offers** để chạy **Step 1 — Available offers** và kiểm tra ưu đãi mà **không bắt đầu thanh toán**. Bạn có thể theo dõi tiến trình tại **Live Status**, chọn **Show technical details** để xem thông tin kỹ thuật và kiểm tra đúng tài khoản trong Google Play. Nếu 30 giây không có thông báo mới, công cụ sẽ cảnh báo; điều đó **chưa có nghĩa là chương trình đã bị treo**.
 

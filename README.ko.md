@@ -1,6 +1,6 @@
 # ePlus AI Toolkit — 한국어
 
-<!-- Source README.md git-blob: e63f8d102d72e57f7bceaaaa00b41357779c8ed3 -->
+<!-- Source README.md git-blob: 3d2463a6568fef2adb5aafc86760c103aec1756e -->
 
 [English](README.md) · [Tiếng Việt](README.vi.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · **한국어** · [Español](README.es.md) · [Français](README.fr.md)
 
@@ -130,6 +130,10 @@ sh run-linux.sh
 
 
 ## 3. 대시보드 사용법
+
+기본 대시보드를 열면 **Step 1**이 자동으로 실행되어 혜택을 조회합니다. ADB와 Frida를 준비할 수 있지만 결제는 시작하지 않습니다. **Scan again**을 눌러 **Offer History**를 갱신할 수 있습니다. 이전에 조회한 혜택은 확인된 계정별로 기기에 저장되며, 계정을 확인하지 못한 조회 결과는 별도로 저장됩니다. 최근에 계정을 확인한 조회에서 발견된 지원 혜택만 실행할 수 있습니다. 요금이 발생할 수 있으므로 **Run**과 **Run again**은 매번 별도로 확인해야 합니다. 실행 기록은 시도를 시작했다는 뜻입니다. 실제 구독, 청구 금액과 갱신일은 Google Play에서 확인하세요.
+
+아래의 단계 선택 및 순차 실행은 단계나 실행 순서를 지정해 대시보드를 열었을 때 적용됩니다. 기본 화면에서는 혜택별 버튼을 사용합니다.
 
 단계가 실행되는 동안에는 **Check Device & Offers**, **Run**, 실행 모드와 단계 선택을 잠가 다른 작업이 동시에 시작되지 않도록 합니다. Step 0은 컴퓨터의 설정을 변경할 수 있습니다. Step 1은 결제를 시작하지 않지만 사전 준비 과정에서 ADB/Frida 설정이 바뀔 수 있습니다. 다음 단계로 진행하기 전에 반드시 Google Play에서 결과를 확인하세요. **Stop이나 Exit를 눌러도 이미 제출한 결제는 취소되지 않습니다.**
 
