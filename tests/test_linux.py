@@ -425,7 +425,9 @@ class LinuxDashboardTests(unittest.IsolatedAsyncioTestCase):
                 async with app.run_test(size=(110, 35)) as pilot:
                     await pilot.click("#quickstart")
                     await app.workers.wait_for_complete()
-                    self.assertIn("1 offers returned", str(app.query_one("#step_result", Static).content))
+                    # A malformed empty row is not a real offer or base plan.
+                    self.assertIn("0 offer(s), 1 unclassified row(s)",
+                                  str(app.query_one("#step_result", Static).content))
                     # Without a selected account, the current TUI shows a
                     # safety notice rather than unlocking paid stages.
                     if isinstance(app.screen, SetupNotice):
