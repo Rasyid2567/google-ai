@@ -63,6 +63,25 @@ class OfferDiscoveryTests(unittest.TestCase):
         self.assertFalse(any("null" in offer_step_label(i+5, item).lower()
                              for i, item in enumerate(rows)))
 
+    def test_step_one_report_explains_offer_codes_and_base_plans(self):
+        from tui_core import offer_explorer_lines, report_summary
+
+        report = {"offers": [
+            {"product": "g1.2tb.ai.subs_variant", "id": "12months-eft",
+             "period": "P1Y", "micros": "0"},
+            {"product": "g1.2tb.ai.subs_variant", "id": "6months-eft",
+             "period": "P6M", "micros": "0"},
+            {"product": "g1.2tb.ai.subs_variant", "id": "null",
+             "period": "P1M", "micros": "19990000"}
+        ]}
+        self.assertIn("2 offer(s), 1 base plan(s)", report_summary(report))
+        lines = "\n".join(offer_explorer_lines(report))
+        self.assertIn("AI Pro 12 months (Step 2)", lines)
+        self.assertIn("AI Pro +6 months (Step 3)", lines)
+        self.assertIn("Standard/base plan (not a promo offer)", lines)
+        self.assertNotIn("/ null", lines)
+        self.assertIn("currency not supplied", lines)
+
     def test_no_extra_offers_does_not_create_step_five(self):
         self.assertEqual(merge_extra_offers(parse_step1({"offers": [
             {"product": "g1.2tb.ai.subs_variant", "id": "12months-eft"}
