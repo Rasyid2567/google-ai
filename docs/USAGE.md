@@ -10,7 +10,7 @@ On startup, the default dashboard shows saved offer history. It runs **Step 1** 
 
 The step selection and guided-sequence controls below apply when the dashboard is opened with an explicit step or sequence option. The default dashboard uses the individual offer buttons.
 
-On this research branch, a fresh verified Step 1 also scans the limited SKU shortlist. Newly discovered offers appear in **Offer History** as **Listing only**. Expand **SKU details and price phases** for the current scan's base plans, pricing phases and SKU results. Google Play eligibility remains unverified.
+On this research branch, a fresh verified Step 1 also scans the limited SKU shortlist. The main list shows offers with a supported **Run** action. Expand **SKU details and price phases** for listing-only offers, base plans, pricing phases and SKU results. Google Play eligibility remains unverified.
 
 ### Start with Check Device & Offers in the explicit step dashboard
 

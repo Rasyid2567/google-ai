@@ -397,9 +397,8 @@ class GoogleAITUI(App[None]):
         border: round #285a80; background: #081a2d;
     }
     #elapsed, #activity { color: #95c4dd; }
-    #offer_history { height: auto; }
+    #offer_history, #sku_only_offers { height: auto; }
     #offer_list_title { dock: top; height: 1; padding: 0 1; background: #162e48; color: #91e3ff; text-style: bold; }
-    .offer-group { height: auto; padding: 0 1; margin-bottom: 1; color: #91e3ff; text-style: bold; }
     #sku_coverage { display: none; height: auto; color: #afcce3; margin: 0 1 1 1; }
     #sku_details { display: none; height: auto; margin: 0; }
     .offer-row { height: auto; min-height: 3; background: #12263d; margin-bottom: 1; }
@@ -556,7 +555,7 @@ class GoogleAITUI(App[None]):
                     yield Button("Exit toolkit", id="exit")
                 with Vertical(id="results"):
                     if self.offer_dashboard:
-                        yield Static("Google Play offers and plans", id="offer_list_title", markup=False)
+                        yield Static("Google Play offers", id="offer_list_title", markup=False)
                     yield TechnicalLog(id="debug_log", wrap=True, highlight=False, markup=False)
                     with Vertical(id="welcome_panel"):
                         if not self.offer_dashboard:
@@ -615,8 +614,9 @@ class GoogleAITUI(App[None]):
                     if self.offer_dashboard:
                         with Vertical(id="offer_history"):
                             yield Static("Offers will appear here after the scan.")
-                        yield Static("", id="sku_coverage", markup=False)
                         with Collapsible(title="SKU details and price phases", id="sku_details"):
+                            yield Static("", id="sku_coverage", markup=False)
+                            yield Vertical(id="sku_only_offers")
                             yield RichLog(id="offer_view", wrap=True, highlight=False, markup=False)
         if not self.offer_dashboard:
             yield Footer()
@@ -1315,10 +1315,17 @@ class GoogleAITUI(App[None]):
                                  and self._offer_check_ready and not self.busy and not self._real_step1_run
                                  and not self._diagnosing and account == self._offer_ready_account,
                                  verified_scan=self._offer_check_ready))
-        container = self.screen_stack[0].query_one("#offer_history", Vertical)
-        coverage = self.screen_stack[0].query_one("#sku_coverage", Static)
-        title = self.screen_stack[0].query_one("#offer_list_title", Static)
-        title.update(f"Google Play offers and plans · {len(rows)} results")
+        screen = self.screen_stack[0]
+        container = screen.query_one("#offer_history", Vertical)
+        details = screen.query_one("#sku_details", Collapsible)
+        listing = details.query_one("#sku_only_offers", Vertical)
+        coverage = details.query_one("#sku_coverage", Static)
+        runnable = [row for row in rows if row.step is not None]
+        listing_only = [row for row in rows if row.step is None]
+        screen.query_one("#offer_list_title", Static).update(
+            f"Google Play offers · {len(runnable)} supported"
+        )
+        details.title = f"SKU details and price phases ({len(listing_only)} listing only)"
         report = self._sku_report or {}
         products = {item["product"] for item in current_rows}
         products.update(item["product"] for item in observed_offers(saved_records))
@@ -1335,16 +1342,15 @@ class GoogleAITUI(App[None]):
                 labels.append(f"No saved result · {', '.join(SKU_LABELS[sku] for sku in absent)}")
         coverage.update("\n".join(labels))
         coverage.display = bool(labels)
+        details.display = bool(listing_only or labels or details.query_one("#offer_view", RichLog).display)
         await container.remove_children()
-        if rows:
-            for label, group in (
-                ("Subscription offers", [row for row in rows if row.step is not None]),
-                ("Other plans and offers · details only", [row for row in rows if row.step is None]),
-            ):
-                if group:
-                    await container.mount(Static(f"{label} ({len(group)})", classes="offer-group"), *group)
+        await listing.remove_children()
+        if runnable:
+            await container.mount(*runnable)
         else:
-            await container.mount(Static("No saved offers to display."))
+            await container.mount(Static("No offers with a supported Run action."))
+        if listing_only:
+            await listing.mount(*listing_only)
 
     def _save_offer_scan(self, offers: list[dict]) -> None:
         try:
