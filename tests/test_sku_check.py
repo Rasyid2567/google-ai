@@ -211,8 +211,8 @@ class StepOneSKUUITests(unittest.IsolatedAsyncioTestCase):
                 ]}))
                 await pilot.pause()
                 self.assertEqual(len(app._extra_offers), 2)
-                self.assertIn("5. Ultra:", str(app.query_one("#stage_5", Static).render()))
-                self.assertIn("6. Ultra:", str(app.query_one("#stage_6", Static).render()))
+                self.assertIn("5. 30TB", str(app.query_one("#stage_5", Static).render()))
+                self.assertIn("6. 20TB", str(app.query_one("#stage_6", Static).render()))
                 app.query_one("#step", Select).value = 5
                 await pilot.pause()
                 self.assertEqual(str(app.query_one("#run", Button).label), "Inspect observed offer")
