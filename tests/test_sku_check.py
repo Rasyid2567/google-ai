@@ -66,6 +66,21 @@ class SKUMetadataTests(unittest.TestCase):
         self.assertEqual(result["status"], "not_returned")
         self.assertEqual(result["items"], [])
 
+    def test_literal_null_offer_is_base_plan_not_extra_promotion(self):
+        result = core.sanitize_offers([{
+            "sku": "g1.2tb.ai.subs_variant",
+            "offer_id": "null",
+            "base_plan_id": "monthly",
+            "phases": [{"price_amount_micros": "19990000",
+                        "currency": "USD", "billing_period": "P1M"}],
+        }], ["g1.2tb.ai.subs_variant"])
+        self.assertEqual(result["status"], "observed")
+        self.assertEqual(result["items"][0]["offer_id"], "")
+        rendered = core.render_result(result)
+        self.assertIn("Offer: (base plan)", rendered)
+        self.assertIn("19.99 USD / P1M (1 month)", rendered)
+        self.assertNotIn("Offer: null", rendered)
+
     def test_missing_and_no_offers_are_distinct(self):
         self.assertEqual(
             core.sanitize_offers([], ["g1.play.20tb"])["status"], "not_returned")
