@@ -29,12 +29,16 @@ CASES = [
     ("06-play-review", "review", 110, 35, ("Verified in Google Play",)),
     ("07-linux-startup", "linux_startup", 110, 35, ("GET STARTED", "Diagnose Android connection", "Ready — no check started")),
     ("08-linux-step-picker", "linux_step_picker", 110, 35, ("Choose a step", "Run this step")),
+    # The status panel intentionally scrolls to the latest observed SKU rows.
+    # Do not require its heading to remain simultaneously visible with prices:
+    # RichLog is scrollable and the heading can be above the terminal viewport.
     ("09-step1-sku-offers", "sku_offers", 110, 35,
-     ("SKU CATALOG", "g1.play.20tb", "19.99 USD", "Check Device & Offers")),
+     ("SKU: g1.play.20tb", "19.99 USD", "Check Device & Offers")),
     ("10-step1-sku-missing", "sku_missing", 110, 35,
-     ("SKU CATALOG", "No subscription offers", "Not returned", "Check Device & Offers")),
+     ("SKU: g1.play.20tb", "No subscription offers", "Not returned",
+      "Check Device & Offers")),
     ("11-step1-discovered-offers", "sku_extra_steps", 110, 35,
-     ("5. Optional", "6. Ultra", "SKU CATALOG", "g1.play.20tb")),
+     ("5. Optional", "6. Ultra", "SKU: g1.play.20tb", "19.99 USD")),
 ]
 
 
