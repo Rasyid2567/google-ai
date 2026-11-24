@@ -12,7 +12,7 @@ Step 1 includes **SKU inspection automatically**. There is only one action: **Ch
    - `g1.play.ai.pro`
    - `g1.30tb`
 4. The existing **AVAILABLE OFFERS · SKU / OFFER / PRICE PHASES** panel displays the original offer list, plus each returned SKU, base plan, offer ID and ordered pricing phases. Products not returned are explicitly marked **Not returned**, *not* "ineligible". Failed SKU checks display a diagnostic message rather than inventing offers.
-5. Existing Steps **2, 3 and 4** remain unchanged. Any distinct additional offers actually observed in Step 1 appear dynamically as **Step 5, Step 6, Step 7…**, up to 12 extras. If there are none, Step 5+ is hidden.
+5. Existing Steps **2, 3 and 4** remain unchanged. Any distinct additional **promotion offers with real offer IDs** observed in Step 1 appear dynamically as **Step 5, Step 6, Step 7…**, up to 12 extras. Entries without offer IDs, including Google Play base plans and literal `null`, stay in Step 1 metadata and never become separate Steps. The narrow sidebar uses short product/offer labels; select the entry to view the complete IDs and first-phase pricing. If there are none, Step 5+ is hidden.
 
 ## Supported operations and safety
 
