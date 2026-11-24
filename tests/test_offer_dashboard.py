@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from textual.widgets import Button
+from textual.widgets import Button, Footer
 
 from device_diagnostics import ConnectionStatus
 from stage_history import read_offer_history
@@ -19,7 +19,7 @@ class OfferDashboardTests(unittest.IsolatedAsyncioTestCase):
         extension = {"product": product, "id": "6months-eft", "micros": 0, "period": "P6M"}
         with tempfile.TemporaryDirectory() as directory:
             repo = Path(directory)
-            for size in ((90, 20), (110, 35)):
+            for size in ((90, 20), (110, 35), (155, 40)):
                 with self.subTest(size=size):
                     app = GoogleAITUI(repo=repo, offer_dashboard=True)
                     app.linux_mode = False
@@ -30,6 +30,14 @@ class OfferDashboardTests(unittest.IsolatedAsyncioTestCase):
                             self.assertTrue(app.query_one("#status_panel").region.height > 0)
                             self.assertLess(app.query_one("#status_panel").region.y, size[1] - 4)
                             self.assertFalse(app.query_one("#advanced_toggle").display)
+                            self.assertFalse(list(app.query(Footer)))
+                            scan = app.query_one("#quickstart", Button)
+                            stop = app.query_one("#stop", Button)
+                            self.assertEqual(scan.region.y, stop.region.y)
+                            self.assertLess(stop.region.width, 20)
+                            content = app.query_one("#screen").region
+                            self.assertLessEqual(content.width, 108)
+                            self.assertLessEqual(abs(2 * content.x + content.width - size[0]), 1)
 
                             def finish_scan(offers):
                                 app._verified_account = account
@@ -55,6 +63,7 @@ class OfferDashboardTests(unittest.IsolatedAsyncioTestCase):
                             await pilot.pause()
                             worker.assert_called_with(2)
                             self.assertFalse(app.sequence)
+                            self.assertFalse(stop.display)
                             self.assertTrue(all(widget.disabled for widget in app.query(".offer-run")))
                             app._finished(2, outcome_for_stage(2, 1, None), None)
                             await pilot.pause()

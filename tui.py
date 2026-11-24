@@ -368,17 +368,27 @@ class GoogleAITUI(App[None]):
     .offer-row { height: auto; min-height: 3; background: #12263d; margin-bottom: 1; }
     .offer-row Static { width: 1fr; height: auto; padding: 0 1; }
     .offer-row Button { width: 13; min-width: 13; height: 3; }
+    Screen.offer-dashboard { align-horizontal: center; }
+    Screen.offer-dashboard #screen { width: 100%; max-width: 108; }
+    Screen.offer-dashboard #brand { height: 1; border: none; padding: 0 1; margin-bottom: 1; }
+    Screen.offer-dashboard #support_separator, Screen.offer-dashboard #maintainer { width: auto; height: 1; }
+    Screen.offer-dashboard #maintainer { color: #8edff1; text-style: underline; }
     Screen.offer-dashboard #content { layout: vertical; }
-    Screen.offer-dashboard #controls { dock: bottom; layout: horizontal; width: 100%; min-width: 0; height: 3; padding: 0; border: none; margin: 0; }
-    Screen.offer-dashboard #controls Button { width: 1fr; min-width: 0; height: 3; }
+    Screen.offer-dashboard #controls {
+        dock: bottom; layout: horizontal; width: 100%; min-width: 0; height: 3;
+        padding: 0; border: none; margin: 0; background: transparent;
+    }
+    Screen.offer-dashboard #controls Button { width: auto; min-width: 0; height: 3; margin-right: 1; }
     Screen.offer-dashboard #controls .section, Screen.offer-dashboard #workflow { display: none; }
     Screen.offer-dashboard #results { width: 100%; margin-left: 0; }
-    Screen.offer-dashboard #welcome_panel { min-height: 0; max-height: 100%; padding: 0 1; }
+    Screen.offer-dashboard #welcome_panel { display: none; }
     Screen.offer-dashboard #offer_toolbar { height: 3; align: left middle; }
     Screen.offer-dashboard #offer_toolbar #welcome { width: 1fr; display: block; }
-    Screen.offer-dashboard #quickstart { width: 25; min-width: 0; }
-    Screen.offer-dashboard #status_panel { height: auto; min-height: 0; }
-    Screen.offer-dashboard #history, Screen.offer-dashboard #activity,
+    Screen.offer-dashboard #quickstart { width: 24; min-width: 0; }
+    Screen.offer-dashboard #stop { width: auto; min-width: 0; margin: 0 0 0 1; }
+    Screen.offer-dashboard #status_panel { height: auto; min-height: 0; margin-bottom: 1; }
+    Screen.offer-dashboard #status_panel .section, Screen.offer-dashboard #state { margin: 0; }
+    Screen.offer-dashboard #history,
     Screen.offer-dashboard #advanced_toggle, Screen.offer-dashboard #quick_hint,
     Screen.offer-dashboard #hint { display: none; }
     #debug_log {
@@ -479,14 +489,17 @@ class GoogleAITUI(App[None]):
                 yield Static("Support: ", id="support_label")
                 yield Link("Telegram" if self.offer_dashboard else "https://t.me/eplus_news", url="https://t.me/eplus_news",
                            tooltip="Telegram support channel", id="support_link")
-            with Horizontal(id="credit"):
-                if not self.offer_dashboard:
+                if self.offer_dashboard:
+                    yield Static("  ·  ", id="support_separator")
+                    yield Link("@hoangsvit", url="https://github.com/hoangsvit", id="maintainer")
+            if not self.offer_dashboard:
+                with Horizontal(id="credit"):
                     yield Static("  Original ")
                     yield Link("@gylive", url="https://github.com/gylive",
                                tooltip="Original author on GitHub", id="original_author")
-                yield Static("  Maintained ")
-                yield Link("@hoangsvit", url="https://github.com/hoangsvit",
-                           tooltip="Maintainer on GitHub", id="maintainer")
+                    yield Static("  |  Maintained ")
+                    yield Link("@hoangsvit", url="https://github.com/hoangsvit",
+                               tooltip="Maintainer on GitHub", id="maintainer")
             with Horizontal(id="details"):
                 yield Static("Device  •  Auto-detect", id="device")
                 yield Static("Account  •  Not checked", id="account")
@@ -506,20 +519,16 @@ class GoogleAITUI(App[None]):
                 with Vertical(id="results"):
                     yield TechnicalLog(id="debug_log", wrap=True, highlight=False, markup=False)
                     with Vertical(id="welcome_panel"):
-                        if self.offer_dashboard:
-                            with Horizontal(id="offer_toolbar"):
-                                yield Static("Offer History", id="welcome")
-                                yield Button("Check Device & Offers", id="quickstart", variant="success")
-                        else:
+                        if not self.offer_dashboard:
                             yield Static(
                                 "GET STARTED · OFFER CHECK" if self.linux_mode
                                 else "GET STARTED · READ-ONLY CHECK", id="welcome")
                             yield Button("Check Device & Offers", id="quickstart", variant="success")
+                            yield Button("Stop after current step", id="stop", disabled=True)
                         yield Static(
                             "Check Android offers without opening checkout." if self.linux_mode
                             else "Check MuMu connection and Google AI offers without opening checkout.",
                             id="quick_hint")
-                        yield Button("Stop after current step", id="stop", disabled=True)
                         yield Button("Verified in Google Play → Next", id="next", disabled=True)
                         yield Button("Choose another step  +", id="advanced_toggle")
                         with Vertical(id="workflow_actions"):
@@ -545,6 +554,11 @@ class GoogleAITUI(App[None]):
                             yield Button("Run all", id="run_all")
                             yield Static("Steps 2–5 can open checkout and require confirmation.", id="read_only")
                     with Vertical(id="status_panel"):
+                        if self.offer_dashboard:
+                            with Horizontal(id="offer_toolbar"):
+                                yield Static("Offer History", id="welcome")
+                                yield Button("Check Device & Offers", id="quickstart", variant="success")
+                                yield Button("Stop check", id="stop", disabled=True)
                         yield Static("LIVE STATUS", classes="section")
                         yield Static("Waiting for your action.", id="activity")
                         yield Static("History appears after selecting or verifying an account.", id="history", markup=False)
@@ -558,8 +572,10 @@ class GoogleAITUI(App[None]):
                         yield Static("Review Google Play pricing and renewal terms "
                                      "before each checkout.", id="hint")
                     if self.offer_dashboard:
-                        yield Vertical(id="offer_history")
-        yield Footer()
+                        with Vertical(id="offer_history"):
+                            yield Static("Offers will appear here after the scan.")
+        if not self.offer_dashboard:
+            yield Footer()
 
     def on_resize(self, event) -> None:
         self.screen.set_class(event.size.height < 27, "compact")
@@ -952,9 +968,9 @@ class GoogleAITUI(App[None]):
             return
         elapsed = int(time.monotonic() - self._started_at)
         self.query_one("#elapsed", Static).update(f"Elapsed: {elapsed // 60:02d}:{elapsed % 60:02d}")
-        if self.current_step == 1:
+        if self.current_step == 1 and not self.offer_dashboard:
             self.query_one("#quickstart", Button).label = f"Checking offers… {elapsed}s"
-        elif self.current_step is not None:
+        elif self.current_step is not None and not self.offer_dashboard:
             self.query_one("#quickstart", Button).label = f"Running Step {self.current_step}… {elapsed}s"
         if self.current_step is not None:
             self.query_one("#run", Button).label = f"Running Step {self.current_step}… {elapsed}s"
@@ -1210,7 +1226,7 @@ class GoogleAITUI(App[None]):
         if rows:
             await container.mount(*rows)
         else:
-            await container.mount(Static("Offer history appears after the first scan."))
+            await container.mount(Static("No saved offers to display."))
 
     @on(Button.Pressed, "#refresh_offers")
     def refresh_offers_pressed(self) -> None:
@@ -1486,7 +1502,9 @@ class GoogleAITUI(App[None]):
         run_button = self.query_one("#run", Button)
         run_button.add_class("checking")
         run_button.label = f"Running Step {step}… 0s"
-        if step == 1:
+        if self.offer_dashboard:
+            quick_check.label = "Scanning…" if step == 1 else f"Running Step {step}…"
+        elif step == 1:
             quick_check.label = "Checking offers… 0s"
         else:
             quick_check.label = f"Running Step {step}… 0s"
@@ -1500,7 +1518,7 @@ class GoogleAITUI(App[None]):
         self.query_one("#next", Button).disabled = True
         self.query_one("#stop", Button).disabled = False
         self.query_one("#stop", Button).label = "Stop check" if step <= 1 else "Stop after this step"
-        self.query_one("#stop", Button).display = True
+        self.query_one("#stop", Button).display = not self.offer_dashboard or step <= 1
         self.query_one("#next", Button).display = False
         self.query_one("#step_result", Static).update(f"Step {step} · {STAGES[step].label}")
         self._set_workflow(step, "running")
@@ -1686,8 +1704,8 @@ class GoogleAITUI(App[None]):
         if selected_device:
             self._checked_device = selected_device.group(1)
             card = self.query_one("#device", Static)
-            card.update("Device  •  " + escape(self._checked_device))
-            card.tooltip = self._checked_device
+            card.update("Device  •  ADB connected" if self.offer_dashboard else "Device  •  " + escape(self._checked_device))
+            card.tooltip = None if self.offer_dashboard else self._checked_device
         android = re.fullmatch(
             r"\s*Android\s+([A-Za-z0-9._-]{1,16}) \(SDK ([0-9]{1,4})\), ABI ([A-Za-z0-9_-]{1,24})\s*",
             line,
@@ -1696,8 +1714,8 @@ class GoogleAITUI(App[None]):
             release, sdk, abi = android.groups()
             details = f"Android {release} · SDK {sdk} · {abi}"
             card = self.query_one("#device", Static)
-            card.update(f"{details} · {escape(self._checked_device)}")
-            card.tooltip = f"{details}\nADB: {self._checked_device}"
+            card.update(details if self.offer_dashboard else f"{details} · {escape(self._checked_device)}")
+            card.tooltip = details if self.offer_dashboard else f"{details}\nADB: {self._checked_device}"
         # Trust only the structured PowerShell "Account <email>" status line,
         # not arbitrary log messages containing an email address.
         account = re.match(
