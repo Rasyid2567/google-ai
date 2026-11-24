@@ -80,7 +80,7 @@ class OfferDiscoveryTests(unittest.TestCase):
         self.assertIn("AI Pro +6 months (Step 3)", lines)
         self.assertIn("Standard/base plan (not a promo offer)", lines)
         self.assertNotIn("/ null", lines)
-        self.assertIn("currency not supplied", lines)
+        self.assertIn("nonzero (currency unknown)", lines)
 
     def test_no_extra_offers_does_not_create_step_five(self):
         self.assertEqual(merge_extra_offers(parse_step1({"offers": [
