@@ -512,19 +512,18 @@ def offer_explorer_lines(report: dict | None, limit: int = 20) -> list[str]:
         period = _offer_field(offer.get("period"))
         micros = offer.get("micros")
         if isinstance(micros, (int, str)) and str(micros) == "0":
-            price = "0 (first phase only)"
+            price = "zero (not eligibility)"
         elif isinstance(micros, (int, str)) and str(micros).isdigit():
-            price = "Paid (currency not supplied)"
+            price = "nonzero (currency unknown)"
         else:
-            price = "Price unknown"
+            price = "unknown"
         if not has_offer_id:
             label = "Standard/base plan (not a promo offer)"
         else:
-            label = known.get(offer_id, f"Additional offer: {offer_id}")
-        rows.append(f"{label}  |  {period}  |  {price}")
-        # Only the ID is shown here; SKU and all price phases follow below.
-        if product != "(unavailable)":
-            rows.append(f"  Product SKU: {product}")
+            label = known.get(offer_id, f"Additional offer: {offer_id}") if (
+                product == "g1.2tb.ai.subs_variant") else f"Additional offer: {offer_id}"
+        identifier = f" [{offer_id}]" if has_offer_id else ""
+        rows.append(f"{label}{identifier}  |  {period}  |  {price}  |  SKU: {product}")
     if len(items) > max(0, limit):
         rows.append(f"... {len(items) - max(0, limit)} more row(s) not shown.")
     rows.append("Displayed offers/base plans do not verify account eligibility or renewal price.")
