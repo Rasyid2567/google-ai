@@ -456,6 +456,7 @@ def report_summary(report: dict | None) -> str:
     if isinstance(offers, list):
         unique_offers = set()
         base_plans = 0
+        unclassified = 0
         for row in offers:
             if not isinstance(row, dict):
                 continue
@@ -463,11 +464,15 @@ def report_summary(report: dict | None) -> str:
             if isinstance(offer_id, str) and offer_id.lower() not in (
                 "", "null", "none", "undefined"):
                 unique_offers.add((str(row.get("product") or ""), offer_id))
-            else:
+            elif isinstance(row.get("product"), str) and row["product"].strip():
                 base_plans += 1
+            else:
+                unclassified += 1
         result = f"{len(unique_offers)} offer(s)"
         if base_plans:
             result += f", {base_plans} base plan(s) without offer IDs"
+        if unclassified:
+            result += f", {unclassified} unclassified row(s)"
         return result + " observed (eligibility NOT verified)"
     status = str(report.get("status", ""))
     entry = CLI_ISSUES.get(status) or MESSAGES.get(status)
@@ -518,7 +523,8 @@ def offer_explorer_lines(report: dict | None, limit: int = 20) -> list[str]:
         else:
             price = "unknown"
         if not has_offer_id:
-            label = "Standard/base plan (not a promo offer)"
+            label = ("Standard/base plan (not a promo offer)"
+                     if product != "(unavailable)" else "Unclassified report entry")
         else:
             label = known.get(offer_id, f"Additional offer: {offer_id}") if (
                 product == "g1.2tb.ai.subs_variant") else f"Additional offer: {offer_id}"
