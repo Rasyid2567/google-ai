@@ -13,6 +13,26 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class SKUMetadataTests(unittest.TestCase):
+    @unittest.skipUnless(importlib.util.find_spec("textual") is not None, "Textual is not installed")
+    def test_research_catalog_queries_every_sku_once_in_bounded_batches(self):
+        from tui import GoogleAITUI, RESEARCH_SKUS
+
+        app = GoogleAITUI(repo=ROOT)
+        generation = app._extra_scan_generation
+        with (patch.object(app, "_query_sku_batch", side_effect=[
+                  {"status": "not_returned", "missing_skus": ["g1.30tb"]},
+                  {"status": "query_error"},
+              ]) as query, patch.object(app, "call_from_thread") as publish):
+            GoogleAITUI.scan_known_skus.__wrapped__(app, "test-device", "test@example.test", generation)
+
+        batches = [call.args[1] for call in query.call_args_list]
+        self.assertEqual([len(batch) for batch in batches], [10, 6])
+        self.assertEqual(tuple(sku for batch in batches for sku in batch), RESEARCH_SKUS)
+        self.assertIn("g1.2tb.ai.18months_eft", RESEARCH_SKUS)
+        result = publish.call_args.args[1]
+        self.assertEqual(result["missing_skus"], ["g1.30tb"])
+        self.assertEqual(result["failed_skus"], list(batches[1]))
+
     def test_requires_explicit_bounded_skus(self):
         self.assertEqual(
             core.validate_skus(["g1.2tb.ai.subs_variant", "g1.2tb.ai.subs_variant"]),

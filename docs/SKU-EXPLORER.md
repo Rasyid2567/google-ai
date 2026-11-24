@@ -12,6 +12,7 @@ Step 1 includes **SKU inspection automatically**. There is only one action: **Ch
    - `g1.play.ai.pro`
    - `g1.ai.pro`
    - `g1.30tb`
+   - Eleven additional product IDs from the local one-SKU study. These cover the Pro 18-, 15-, 12-, 6-, 4-, 3-, 2- and 1-month introductory products and the three paid promotion products. They are queried for metadata in batches of at most ten IDs. The three existing +6-month stacking offers are separate offer IDs under the already queried Pro SKU.
 4. The existing **AVAILABLE OFFERS · SKU / OFFER / PRICE PHASES** panel displays the original offer list, plus each returned SKU, base plan, offer ID and ordered pricing phases. Products not returned are explicitly marked **Not returned**, *not* "ineligible". Failed SKU checks display a diagnostic message rather than inventing offers.
 5. Existing Steps **2, 3 and 4** remain unchanged. Any distinct additional offers actually observed in Step 1 appear dynamically as **Step 5, Step 6, Step 7…**, up to 12 extras. If there are none, Step 5+ is hidden.
 
@@ -23,7 +24,7 @@ Step 1's SKU check invokes `sku_check_runner.py` using a separate read-only Frid
 
 The candidate SKUs are a **bounded, known shortlist**, not an exhaustive Google Play catalogue, and returned offers may vary by region, time and account. GitHub Actions cannot confirm the device integration without a real authorized emulator.
 
-The shortlist covers the five literal product IDs used in the engine's ProductDetails queries. Google One's public AI plan comparison also lists Plus (400 GB or 2 TB), Pro (5 TB), Ultra 5x (20 TB) and Ultra 20x (30 TB). The public comparison identifies plan families but supplies no product IDs for additional candidates. Example IDs in test fixtures and synthetic research data are not evidence of a product returned by Google Play.
+The scan covers the five product IDs used by the engine and the eleven explicit product IDs found in the study's batch files. Google Play may return only a subset for the current account. Example IDs in tests and synthetic research data are excluded.
 
 New scans clear stale extra steps and SKU results. When the selected account/device changes, the old offer catalog is cleared so it cannot be mistaken for the current account.
 

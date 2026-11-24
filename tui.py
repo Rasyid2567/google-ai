@@ -27,7 +27,7 @@ from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Button, Footer, Header, Link, RichLog, Select, Static
 
-from sku_check_core import render_result as render_sku_result
+from sku_check_core import MAX_SKUS, render_result as render_sku_result
 from offer_discovery import (ExtraOffer, parse_step1, parse_sku_check,
                              merge_extra_offers, offer_step_label, offer_details)
 from tui_core import STAGES, Outcome, command_for_step, mask_email, \
@@ -38,14 +38,25 @@ from device_diagnostics import ConnectionDiagnosis, ConnectionStatus, inspect_co
 from stage_history import latest_history, read_history, record_history, read_offer_history, record_offer_scan
 from stage_history import latest_offer_history
 
-RESEARCH_SKUS = ("g1.2tb.ai.subs_variant", "g1.play.20tb", "g1.play.ai.pro", "g1.ai.pro", "g1.30tb")
 SKU_LABELS = {
     "g1.2tb.ai.subs_variant": "Google AI Pro",
     "g1.play.20tb": "Google AI Ultra 5x · 20 TB",
     "g1.play.ai.pro": "Google AI Pro (Play)",
     "g1.ai.pro": "Google AI Pro (g1.ai.pro)",
     "g1.30tb": "Google AI Ultra 20x · 30 TB",
+    "g1.2tb.ai.18months_eft": "Google AI Pro · 18 months",
+    "g1.2tb.ai.15months_eft": "Google AI Pro · 15 months",
+    "g1.2tb.ai.12months_eft": "Google AI Pro · 12 months",
+    "g1.2tb.ai.6months_eft": "Google AI Pro · 6 months",
+    "g1.2tb.ai.4months_eft": "Google AI Pro · 4 months",
+    "g1.2tb.ai.3months_eft": "Google AI Pro · 3 months",
+    "g1.2tb.ai.2months_eft": "Google AI Pro · 2 months",
+    "g1.2tb.ai.1month_eft": "Google AI Pro · 1 month",
+    "g1.2tb.ai.12months_ip_90p": "Google AI Pro · 12-month promotion",
+    "g1.2tb.ai.3months_ip_90p.acq": "Google AI Pro · 3-month promotion",
+    "g1.2tb.ai.1month_ip_95p.acq": "Google AI Pro · 1-month promotion",
 }
+RESEARCH_SKUS = tuple(SKU_LABELS)
 
 
 class OfferRow(Horizontal):
@@ -1202,23 +1213,42 @@ class GoogleAITUI(App[None]):
                        "SKU CATALOG · No SKU scan (run Step 1 on the verified device).")
         else:
             view.write("SKU CATALOG · PRODUCT / BASE PLAN / OFFER / PRICE PHASES")
-            for line in render_sku_result(self._sku_report).splitlines():
-                view.write(line)
+            for batch in self._sku_report.get("batches", [self._sku_report]):
+                for line in render_sku_result(batch).splitlines():
+                    view.write(line)
         view.display = True
         self.query_one("#offers_title", Static).display = True
 
     @work(thread=True, exclusive=True, group="step1-known-skus")
     def scan_known_skus(self, device: str, account: str,
                         generation: int) -> None:
-        """After a *real* Step 1, query a small, existing SKU shortlist only.
+        """After a verified Step 1, query the configured product IDs in batches.
 
         No catalogue enumeration, no account switching or checkout; fail closed.
         """
-        command = [sys.executable, str(self.repo / "sku_check_runner.py"),
-                   "--serial", device]
-        for sku in RESEARCH_SKUS:
+        result: dict = {"batches": [], "missing_skus": [], "no_offer_skus": [], "failed_skus": []}
+        for start in range(0, len(RESEARCH_SKUS), MAX_SKUS):
+            if generation != self._extra_scan_generation:
+                return
+            skus = RESEARCH_SKUS[start:start + MAX_SKUS]
+            batch = self._query_sku_batch(device, skus)
+            result["batches"].append(batch)
+            if batch.get("status") not in ("observed", "no_offers", "not_returned"):
+                result["failed_skus"].extend(skus)
+                continue
+            for key in ("missing_skus", "no_offer_skus"):
+                values = batch.get(key)
+                if isinstance(values, list):
+                    result[key].extend(sku for sku in skus if sku in values)
+        try:
+            self.call_from_thread(self._known_skus_finished, result, device, account, generation)
+        except RuntimeError:
+            pass
+
+    def _query_sku_batch(self, device: str, skus: tuple[str, ...]) -> dict:
+        command = [sys.executable, str(self.repo / "sku_check_runner.py"), "--serial", device]
+        for sku in skus:
             command.extend(["--sku", sku])
-        result: dict = {"status": "query_error"}
         try:
             output = subprocess.run(
                 command, cwd=self.repo, capture_output=True, text=True,
@@ -1227,14 +1257,10 @@ class GoogleAITUI(App[None]):
             if len(output) <= 200_000:
                 parsed = json.loads(output)
                 if isinstance(parsed, dict):
-                    result = parsed
+                    return parsed
         except (OSError, ValueError, UnicodeError, subprocess.TimeoutExpired):
             pass
-        try:
-            self.call_from_thread(self._known_skus_finished, result,
-                                  device, account, generation)
-        except RuntimeError:
-            pass
+        return {"status": "query_error"}
 
     def _known_skus_finished(self, result: dict, device: str,
                              account: str, generation: int) -> None:
@@ -1245,7 +1271,7 @@ class GoogleAITUI(App[None]):
         before = len(self._extra_offers)
         self._sku_report = result
         self._real_step1_run = False
-        extras = parse_sku_check(result)
+        extras = [item for batch in result.get("batches", [result]) for item in parse_sku_check(batch)]
         self._update_discovered(extras)
         self._render_offer_catalog()
         if self.offer_dashboard:
@@ -1323,7 +1349,8 @@ class GoogleAITUI(App[None]):
         products = {item["product"] for item in current_rows}
         products.update(item["product"] for item in observed_offers(saved_records))
         labels = []
-        for key, label in (("missing_skus", "Not returned"), ("no_offer_skus", "No offers returned")):
+        for key, label in (("missing_skus", "Not returned"), ("no_offer_skus", "No offers returned"),
+                           ("failed_skus", "Check failed")):
             values = report.get(key)
             if isinstance(values, list):
                 matching = [sku for sku in RESEARCH_SKUS if sku in values]
