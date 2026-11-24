@@ -6,6 +6,8 @@ from pathlib import Path
 import tempfile
 import time
 
+from tui_core import offer_key
+
 
 def history_path(repo: Path, account: str) -> Path:
     digest = hashlib.sha256(account.strip().lower().encode("utf-8")).hexdigest()
@@ -83,9 +85,9 @@ def latest_offer_history(repo: Path) -> list[dict] | None:
 
 
 def record_offer_scan(repo: Path, account: str, offers: list[dict]) -> None:
-    entries = {(item["product"], item["id"]): item for item in read_offer_history(repo, account)
+    entries = {offer_key(item): item for item in read_offer_history(repo, account)
                if isinstance(item.get("product"), str) and isinstance(item.get("id"), str)}
     for item in offers:
-        key = item["product"], item["id"]
+        key = offer_key(item)
         entries[key] = {**entries.get(key, {}), **item}
     _write_history(history_path(repo, account).with_suffix(".offers.json"), list(entries.values()))

@@ -6,7 +6,7 @@ from unittest.mock import patch
 from textual.widgets import Button, Footer
 
 from device_diagnostics import ConnectionStatus
-from stage_history import read_offer_history
+from stage_history import read_offer_history, record_offer_scan
 from tui import Approval, GoogleAITUI, OfferRow
 from tui_core import observed_offers, outcome_for_stage, runnable_offer_step
 
@@ -21,6 +21,17 @@ class OfferDashboardTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual([row["id"] for row in rows], ["12months-eft", "base-plan-monthly"])
         self.assertEqual([runnable_offer_step(row) for row in rows], [2, None])
         self.assertEqual(len(observed_offers([unnamed, monthly, {**monthly, "id": "base-plan-other"}])), 3)
+
+    def test_same_offer_id_on_different_base_plans_stays_separate(self):
+        offer = {"product": "g1.play.20tb", "id": "example", "period": "P1M",
+                 "micros": 0, "inspect_only": True}
+        rows = observed_offers([{**offer, "base_plan": "monthly"}, {**offer, "base_plan": "annual"}])
+        with tempfile.TemporaryDirectory() as directory:
+            repo = Path(directory)
+            record_offer_scan(repo, "fixture@example.test", rows)
+            self.assertEqual(read_offer_history(repo, "fixture@example.test"), rows)
+        self.assertEqual(len(rows), 2)
+        self.assertTrue(all(runnable_offer_step(row) is None for row in rows))
 
     async def test_scan_run_cancel_retry_and_history(self):
         account = "fixture@example.com"

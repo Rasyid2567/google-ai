@@ -33,7 +33,7 @@ from offer_discovery import (ExtraOffer, parse_step1, parse_sku_check,
 from tui_core import STAGES, Outcome, command_for_step, mask_email, \
     needs_setup, offer_explorer_lines, outcome_for_stage, read_fresh_report, cli_issue_outcome, \
     readable_issue_line, report_summary, safe_launch_diagnostic, validate_step
-from tui_core import observed_offers, offer_step, runnable_offer_step
+from tui_core import observed_offers, offer_key, offer_step, runnable_offer_step
 from device_diagnostics import ConnectionDiagnosis, ConnectionStatus, inspect_connection, poll_connection
 from stage_history import latest_history, read_history, record_history, read_offer_history, record_offer_scan
 from stage_history import latest_offer_history
@@ -53,7 +53,7 @@ class OfferRow(Horizontal):
                  verified_scan: bool) -> None:
         super().__init__(classes="offer-row")
         self.step = offer_step(offer)
-        self.offer_identity = (offer["product"], offer["id"], offer["period"], offer["micros"])
+        self.offer_identity = (offer_key(offer), offer["period"], offer["micros"])
         product = SKU_LABELS.get(offer["product"], offer["product"])
         offer_id = offer["id"]
         if self.step is not None:
@@ -64,6 +64,8 @@ class OfferRow(Horizontal):
             name = product
         else:
             name = f"{product} / {offer_id}"
+        if self.step is None and offer["base_plan"] not in ("(unavailable)", "monthly"):
+            name += f" · {offer['base_plan']}"
         source = "Latest scan" if current else "Saved"
         if self.step is None:
             attempt = "Listing only"
@@ -1247,7 +1249,8 @@ class GoogleAITUI(App[None]):
         self._update_discovered(extras)
         self._render_offer_catalog()
         if self.offer_dashboard:
-            sku_offers = [{"product": item.product, "id": item.offer_id, "period": item.period,
+            sku_offers = [{"product": item.product, "base_plan": item.base_plan,
+                           "id": item.offer_id, "period": item.period,
                            "micros": item.price_micros, "inspect_only": True} for item in extras]
             # Keep the original checkout observation when both sources report
             # the same offer. Supplemental SKU data only adds listing details.
@@ -1280,7 +1283,7 @@ class GoogleAITUI(App[None]):
                     and account == self._catalog_account == self._offer_ready_account
                     and device == self._offer_ready_device
                     and any(
-                        (item["product"], item["id"], item["period"], item["micros"]) == row.offer_identity
+                        (offer_key(item), item["period"], item["micros"]) == row.offer_identity
                         and runnable_offer_step(item) == row.step for item in self._current_offers
                     ))
 
@@ -1291,7 +1294,7 @@ class GoogleAITUI(App[None]):
         account = self._catalog_account
         saved_records = (self._restored_offers if self._restored_offers is not None
                          else read_offer_history(self.repo, account))
-        current = {(item["product"], item["id"]): item for item in self._current_offers}
+        current = {offer_key(item): item for item in self._current_offers}
         ran = set()
         if self._restored_offers is None:
             ran.update(item.get("step") for item in read_history(self.repo, account)
@@ -1301,9 +1304,9 @@ class GoogleAITUI(App[None]):
         ran.discard(None)
         rows = []
         current_rows = list(current.values())
-        earlier = [item for item in saved_records if (item.get("product"), item.get("id")) not in current]
+        earlier = [item for item in saved_records if offer_key(item) not in current]
         for item in observed_offers(current_rows + earlier):
-            key = item["product"], item["id"]
+            key = offer_key(item)
             fresh = key in current
             rows.append(OfferRow(item, current=fresh, ran=offer_step(item) in ran,
                                  enabled=fresh and runnable_offer_step(item) is not None

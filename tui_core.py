@@ -470,19 +470,27 @@ def _offer_field(value: object) -> str:
     return text if _SAFE_OFFER_FIELD.fullmatch(text) else "(unavailable)"
 
 
+def offer_key(offer: dict) -> tuple[str, str, str]:
+    offer_id = _offer_field(offer.get("id"))
+    base_plan = _offer_field(offer.get("base_plan"))
+    if base_plan == "(unavailable)" and offer_id.startswith("base-plan-"):
+        base_plan = _offer_field(offer_id.removeprefix("base-plan-"))
+    return _offer_field(offer.get("product")), base_plan, offer_id
+
+
 def observed_offers(value: object) -> list[dict]:
     """Keep only documented first-phase metadata from a listing."""
     items = {}
     for offer in value if isinstance(value, list) else []:
         if not isinstance(offer, dict):
             continue
-        product = _offer_field(offer.get("product"))
-        offer_id = _offer_field(offer.get("id"))
+        key = offer_key(offer)
+        product, base_plan, offer_id = key
         micros = str(offer.get("micros"))
-        key = product, offer_id
         if key in items and not items[key]["inspect_only"] and offer.get("inspect_only") is True:
             continue
-        items[key] = {"product": product, "id": offer_id, "period": _offer_field(offer.get("period")),
+        items[key] = {"product": product, "base_plan": base_plan, "id": offer_id,
+                      "period": _offer_field(offer.get("period")),
                       "micros": micros if re.fullmatch(r"[0-9]{1,18}", micros) else None,
                       "inspect_only": offer.get("inspect_only") is True}
     # Step 1 may have an unnamed base plan. Prefer the SKU row when it
