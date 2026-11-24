@@ -22,9 +22,46 @@ class OfferDiscoveryTests(unittest.TestCase):
         offers = merge_extra_offers(parse_step1(report))
         self.assertEqual(len(offers), 2)
         self.assertTrue(offers[0].legacy_checkout_supported)
-        self.assertEqual(offer_step_label(5, offers[0]), "5. Optional +6 months")
-        self.assertIn("Ultra", offer_step_label(6, offers[1]))
+        self.assertEqual(offer_step_label(5, offers[0]), "5. +6mo optional")
+        self.assertIn("20TB", offer_step_label(6, offers[1]))
         self.assertFalse(offers[1].legacy_checkout_supported)
+
+    def test_null_and_base_plans_never_become_new_steps(self):
+        """This reproduces the extra 'Offer: null' and empty sidebar rows."""
+        report = {"offers": [
+            {"product": "g1.2tb.ai.subs_variant", "id": "null", "period": "P1M"},
+            {"product": "g1.2tb.ai.subs_variant", "id": None, "period": "P1M"},
+            {"product": "g1.2tb.ai.subs_variant", "id": "undefined", "period": "P1M"},
+            {"product": "g1.2tb.ai.subs_variant", "id": "12months-eft", "period": "P1Y"},
+        ]}
+        sku_result = {"status": "observed", "items": [
+            {"sku": "g1.2tb.ai.subs_variant", "base_plan_id": "monthly",
+             "offer_id": "", "phases": [{"billing_period": "P1M",
+                                          "currency": "USD", "price_amount_micros": "19990000"}]},
+            {"sku": "g1.play.20tb", "base_plan_id": "monthly",
+             "offer_id": "null", "phases": [{"billing_period": "P1M",
+                                             "currency": "USD", "price_amount_micros": "19990000"}]},
+            {"sku": "g1.play.20tb", "base_plan_id": "monthly",
+             "offer_id": "promo-2026", "phases": [{"billing_period": "P1M",
+                                                  "currency": "USD", "price_amount_micros": "19990000"}]}
+        ]}
+        offers = merge_extra_offers(parse_step1(report), parse_sku_check(sku_result))
+        self.assertEqual([(x.product, x.offer_id) for x in offers],
+                         [("g1.play.20tb", "promo-2026")])
+        self.assertEqual(offer_step_label(5, offers[0]), "5. 20TB promo-2026")
+        self.assertLessEqual(len(offer_step_label(5, offers[0])), 19)
+
+    def test_supported_optional_offer_stays_first_and_labels_fit_sidebar(self):
+        rows = merge_extra_offers([
+            ExtraOffer("g1.play.ai.pro", "additional-long-promotion-id-2026"),
+            ExtraOffer("g1.2tb.ai.subs_variant", "6months-eft-ss-2026"),
+            ExtraOffer("g1.play.20tb", "deal-20tb"),
+        ])
+        self.assertEqual(rows[0].offer_id, "6months-eft-ss-2026")
+        self.assertTrue(all(len(offer_step_label(index + 5, item)) <= 19
+                            for index, item in enumerate(rows)))
+        self.assertFalse(any("null" in offer_step_label(i+5, item).lower()
+                             for i, item in enumerate(rows)))
 
     def test_no_extra_offers_does_not_create_step_five(self):
         self.assertEqual(merge_extra_offers(parse_step1({"offers": [
