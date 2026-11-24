@@ -480,10 +480,24 @@ def observed_offers(value: object) -> list[dict]:
         offer_id = _offer_field(offer.get("id"))
         micros = str(offer.get("micros"))
         key = product, offer_id
+        if key in items and not items[key]["inspect_only"] and offer.get("inspect_only") is True:
+            continue
         items[key] = {"product": product, "id": offer_id, "period": _offer_field(offer.get("period")),
                       "micros": micros if re.fullmatch(r"[0-9]{1,18}", micros) else None,
                       "inspect_only": offer.get("inspect_only") is True}
-    return list(items.values())
+    # Step 1 may have an unnamed base plan. Prefer the SKU row when it
+    # identifies exactly one base plan with the same first phase.
+    base_plans = {}
+    for item in items.values():
+        if item["id"].startswith("base-plan-") and item["micros"] is not None:
+            phase = item["product"], item["period"], item["micros"]
+            base_plans[phase] = base_plans.get(phase, 0) + 1
+    return [
+        item for item in items.values()
+        if not (item["id"] in ("null", "(unavailable)") and base_plans.get(
+            (item["product"], item["period"], item["micros"])
+        ) == 1)
+    ]
 
 
 def offer_step(offer: dict) -> int | None:

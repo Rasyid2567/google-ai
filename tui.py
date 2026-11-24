@@ -1228,16 +1228,11 @@ class GoogleAITUI(App[None]):
         self._update_discovered(extras)
         self._render_offer_catalog()
         if self.offer_dashboard:
-            current = {(item["product"], item["id"]) for item in self._current_offers}
-            additional = observed_offers([
-                {"product": item.product, "id": item.offer_id, "period": item.period,
-                 "micros": item.price_micros, "inspect_only": True}
-                for item in extras if (item.product, item.offer_id) not in current
-            ])
-            self._current_offers.extend(additional)
-            if additional:
-                self._save_offer_scan(additional)
-            self.call_later(self._render_offer_history)
+            sku_offers = [{"product": item.product, "id": item.offer_id, "period": item.period,
+                           "micros": item.price_micros, "inspect_only": True} for item in extras]
+            # Keep the original checkout observation when both sources report
+            # the same offer. Supplemental SKU data only adds listing details.
+            self._publish_offer_scan(self._current_offers + sku_offers)
         if len(self._extra_offers) > before:
             self.query_one("#activity", Static).update(
                 f"Step 1 observed {len(self._extra_offers)} additional offer(s) "
@@ -1264,7 +1259,6 @@ class GoogleAITUI(App[None]):
         account = self._catalog_account
         saved_records = (self._restored_offers if self._restored_offers is not None
                          else read_offer_history(self.repo, account))
-        saved = {(item["product"], item["id"]): item for item in observed_offers(saved_records)}
         current = {(item["product"], item["id"]): item for item in self._current_offers}
         ran = set()
         if self._restored_offers is None:
@@ -1274,7 +1268,10 @@ class GoogleAITUI(App[None]):
             [record for record in saved_records if record.get("ran") is True]))
         ran.discard(None)
         rows = []
-        for key, item in {**current, **{key: item for key, item in saved.items() if key not in current}}.items():
+        current_rows = list(current.values())
+        earlier = [item for item in saved_records if (item.get("product"), item.get("id")) not in current]
+        for item in observed_offers(current_rows + earlier):
+            key = item["product"], item["id"]
             fresh = key in current
             rows.append(OfferRow(item, current=fresh, ran=offer_step(item) in ran,
                                  enabled=fresh and runnable_offer_step(item) is not None
@@ -1293,6 +1290,11 @@ class GoogleAITUI(App[None]):
             record_offer_scan(self.repo, self._catalog_account, offers)
         except OSError:
             self.notify("Could not save local offer history.", severity="warning")
+
+    def _publish_offer_scan(self, offers: object) -> None:
+        self._current_offers = observed_offers(offers)
+        self._save_offer_scan(self._current_offers)
+        self.call_later(self._render_offer_history)
 
     @on(Button.Pressed, "#refresh_offers")
     def refresh_offers_pressed(self) -> None:
@@ -1940,14 +1942,17 @@ class GoogleAITUI(App[None]):
                     )
         if self.offer_dashboard:
             if step == 1:
-                self._current_offers = observed_offers((report or {}).get("offers")) if outcome.code == "listed" else []
                 if outcome.code == "listed":
                     self._restored_offers = None
                     self._catalog_account = self._offer_ready_account or ""
-                    self._save_offer_scan(self._current_offers)
-            elif not self._offer_check_ready:
-                self._current_offers = []
-            self.call_later(self._render_offer_history)
+                    self._publish_offer_scan((report or {}).get("offers"))
+                else:
+                    self._current_offers = []
+                    self.call_later(self._render_offer_history)
+            else:
+                if not self._offer_check_ready:
+                    self._current_offers = []
+                self.call_later(self._render_offer_history)
         if outcome.can_review and self.sequence and step < 4 and not self._stop_after_step:
             self.query_one("#next", Button).disabled = False
             self.query_one("#next", Button).display = True

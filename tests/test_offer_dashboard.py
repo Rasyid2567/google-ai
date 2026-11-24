@@ -8,10 +8,20 @@ from textual.widgets import Button, Footer
 from device_diagnostics import ConnectionStatus
 from stage_history import read_offer_history
 from tui import Approval, GoogleAITUI, OfferRow
-from tui_core import outcome_for_stage
+from tui_core import observed_offers, outcome_for_stage, runnable_offer_step
 
 
 class OfferDashboardTests(unittest.IsolatedAsyncioTestCase):
+    def test_scan_sources_merge_without_adding_checkout_paths(self):
+        product = "g1.2tb.ai.subs_variant"
+        unnamed = {"product": product, "id": None, "period": "P1M", "micros": 19990000}
+        monthly = {**unnamed, "id": "base-plan-monthly", "inspect_only": True}
+        annual = {"product": product, "id": "12months-eft", "period": "P1Y", "micros": 0}
+        rows = observed_offers([unnamed, annual, monthly, {**annual, "inspect_only": True}])
+        self.assertEqual([row["id"] for row in rows], ["12months-eft", "base-plan-monthly"])
+        self.assertEqual([runnable_offer_step(row) for row in rows], [2, None])
+        self.assertEqual(len(observed_offers([unnamed, monthly, {**monthly, "id": "base-plan-other"}])), 3)
+
     async def test_scan_run_cancel_retry_and_history(self):
         account = "fixture@example.com"
         product = "g1.2tb.ai.subs_variant"
