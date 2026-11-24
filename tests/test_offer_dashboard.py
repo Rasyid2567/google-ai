@@ -18,9 +18,9 @@ class OfferDashboardTests(unittest.IsolatedAsyncioTestCase):
         initial = {"product": product, "id": "12months-eft", "micros": 0, "period": "P1Y"}
         extension = {"product": product, "id": "6months-eft", "micros": 0, "period": "P6M"}
         with tempfile.TemporaryDirectory() as directory:
-            repo = Path(directory)
             for size in ((90, 20), (110, 35), (155, 40)):
                 with self.subTest(size=size):
+                    repo = Path(directory) / str(size[0])
                     app = GoogleAITUI(repo=repo, offer_dashboard=True)
                     app.linux_mode = False
                     with patch.object(app, "run_stage") as worker, patch.object(app, "_poll_connection"):
@@ -79,3 +79,19 @@ class OfferDashboardTests(unittest.IsolatedAsyncioTestCase):
                             self.assertEqual(len(saved), 2)
                             self.assertTrue(next(item["ran"] for item in saved if item["id"] == initial["id"]))
                             self.assertEqual(read_offer_history(repo, "other@example.com"), [])
+            reopened = GoogleAITUI(repo=repo, offer_dashboard=True)
+            with (patch.object(reopened, "run_stage") as worker,
+                  patch.object(reopened, "_inspect_connection_periodically") as poll):
+                async with reopened.run_test(size=(90, 20)) as pilot:
+                    await pilot.pause()
+                    worker.assert_not_called()
+                    reopened._poll_connection()
+                    poll.assert_not_called()
+                    self.assertEqual(str(reopened.query_one("#quickstart", Button).label), "Scan again")
+                    rows = list(reopened.query(OfferRow))
+                    self.assertEqual(len(rows), 2)
+                    self.assertEqual(str(rows[0].query_one(Button).label), "Run again")
+                    self.assertTrue(all(row.query_one(Button).disabled for row in rows))
+                    reopened.query_one("#quickstart", Button).press()
+                    await pilot.pause()
+                    worker.assert_called_once_with(1)

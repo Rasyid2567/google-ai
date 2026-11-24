@@ -57,11 +57,29 @@ def record_history(repo: Path, account: str, step: int, status: str) -> None:
 
 def read_offer_history(repo: Path, account: str) -> list[dict]:
     path = history_path(repo, account).with_suffix(".offers.json")
+    return _read_offer_file(path) or []
+
+
+def _read_offer_file(path: Path) -> list[dict] | None:
     try:
         items = json.loads(path.read_text(encoding="utf-8"))
-        return [item for item in items if isinstance(item, dict)] if isinstance(items, list) else []
+        return [item for item in items if isinstance(item, dict)] if isinstance(items, list) else None
     except (OSError, ValueError):
-        return []
+        return None
+
+
+def latest_offer_history(repo: Path) -> list[dict] | None:
+    """Restore the last local catalog for viewing without an account check."""
+    try:
+        paths = sorted((repo / "logs" / "stage-history").glob("*.offers.json"),
+                       key=lambda path: path.stat().st_mtime_ns, reverse=True)
+    except OSError:
+        return None
+    for path in paths:
+        history = _read_offer_file(path)
+        if history is not None:
+            return history
+    return None
 
 
 def record_offer_scan(repo: Path, account: str, offers: list[dict]) -> None:

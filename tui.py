@@ -35,6 +35,7 @@ from tui_core import STAGES, Outcome, command_for_step, mask_email, \
 from tui_core import observed_offers, offer_step, runnable_offer_step
 from device_diagnostics import ConnectionDiagnosis, ConnectionStatus, inspect_connection, poll_connection
 from stage_history import latest_history, read_history, record_history, read_offer_history, record_offer_scan
+from stage_history import latest_offer_history
 
 
 class OfferRow(Horizontal):
@@ -445,6 +446,7 @@ class GoogleAITUI(App[None]):
         self.offer_dashboard = offer_dashboard
         self._current_offers: list[dict] = []
         self._catalog_account = ""
+        self._restored_offers: list[dict] | None = None
         self.debug_visible = initial_debug
         self.busy = False
         self._diagnosing = False
@@ -674,6 +676,7 @@ class GoogleAITUI(App[None]):
         if self.offer_dashboard:
             self._catalog_account = account
             self._current_offers = []
+            self._restored_offers = None
             self.call_later(self._render_offer_history)
         self.query_one("#account", Static).update("Account  •  " + escape(mask_email(account)) + " (selected)")
         self.query_one("#quickstart", Button).label = "Check Device & Offers"
@@ -743,7 +746,6 @@ class GoogleAITUI(App[None]):
     def on_mount(self) -> None:
         if self.offer_dashboard:
             self.screen.add_class("offer-dashboard")
-            self.call_after_refresh(self.quickstart_pressed)
         self._render_history(latest_history(self.repo),
                              "Previous run · select an account and run Step 1 to verify")
         self.set_interval(1, self._refresh_elapsed)
@@ -774,6 +776,15 @@ class GoogleAITUI(App[None]):
             self.query_one("#workflow_actions", Vertical).display = True
             self.query_one("#advanced_toggle", Button).label = "Hide step selection  −"
         self._update_discovered([], replace=True)
+        if self.offer_dashboard:
+            self._restored_offers = latest_offer_history(self.repo)
+            if self._restored_offers is None:
+                self.call_after_refresh(self.quickstart_pressed)
+            else:
+                self.query_one("#quickstart", Button).label = "Scan again"
+                self._set_status("Saved offer history loaded")
+                self._set_message("Scan again to verify the current device, account and offers before running one.")
+                self.call_later(self._render_offer_history)
 
     def _invalidate_connection_polls(self) -> None:
         """A pre-operation poll must never overwrite a newer stage or diagnosis."""
@@ -782,6 +793,7 @@ class GoogleAITUI(App[None]):
 
     def _poll_connection(self) -> None:
         if (self.busy or self._diagnosing or self._connection_polling or
+                (self._restored_offers is not None and self.current_step is None) or
                 (isinstance(self.screen, ModalScreen) and not isinstance(self.screen, ConnectionNotice))):
             return
         self._connection_polling = True
@@ -836,7 +848,9 @@ class GoogleAITUI(App[None]):
             self.query_one("#next", Button).display = False
             self.query_one("#next", Button).disabled = True
             self.query_one("#quickstart", Button).display = True
-            self.query_one("#quickstart", Button).label = "Check Device & Offers"
+            self.query_one("#quickstart", Button).label = (
+                "Scan again" if self._restored_offers is not None else "Check Device & Offers"
+            )
             self._update_run_mode()
         if result.state in ("missing_adb", "disconnected", "adb_error") and changed:
             if isinstance(self.screen, ConnectionNotice):
@@ -1206,11 +1220,14 @@ class GoogleAITUI(App[None]):
 
     async def _render_offer_history(self) -> None:
         account = self._catalog_account
-        saved_records = read_offer_history(self.repo, account)
+        saved_records = (self._restored_offers if self._restored_offers is not None
+                         else read_offer_history(self.repo, account))
         saved = {(item["product"], item["id"]): item for item in observed_offers(saved_records)}
         current = {(item["product"], item["id"]): item for item in self._current_offers}
-        ran = {item.get("step") for item in read_history(self.repo, account) if isinstance(item, dict)
-               and item.get("status") == "started"}
+        ran = set()
+        if self._restored_offers is None:
+            ran.update(item.get("step") for item in read_history(self.repo, account)
+                       if isinstance(item, dict) and item.get("status") == "started")
         ran.update(offer_step(item) for item in observed_offers(
             [record for record in saved_records if record.get("ran") is True]))
         ran.discard(None)
@@ -1827,7 +1844,9 @@ class GoogleAITUI(App[None]):
         self.query_one("#choose_account", Button).disabled = self._accounts_loading
         self.query_one("#quickstart", Button).disabled = False
         self.query_one("#quickstart", Button).label = (
-            "Scan again" if self.offer_dashboard and step == 1 and outcome.code == "listed"
+            "Scan again" if self.offer_dashboard and (
+                (step == 1 and outcome.code == "listed") or self._restored_offers is not None
+                or self._current_offers)
             else "Continue to Step 2" if not self.offer_dashboard and self._initial_offer_ready
             else "Check Device & Offers"
         )
@@ -1871,6 +1890,7 @@ class GoogleAITUI(App[None]):
             if step == 1:
                 self._current_offers = observed_offers((report or {}).get("offers")) if outcome.code == "listed" else []
                 if outcome.code == "listed":
+                    self._restored_offers = None
                     self._catalog_account = self._offer_ready_account or ""
                     try:
                         record_offer_scan(self.repo, self._catalog_account, self._current_offers)

@@ -6,7 +6,7 @@
 
 ### Default offer dashboard
 
-The default dashboard automatically runs **Step 1** on startup. It lists offers without starting checkout, though its environment checks can prepare ADB and Frida. Use **Scan again** to refresh the **Offer History** list. The toolkit keeps previously observed offers locally, with separate history for verified accounts and for scans where the account could not be verified. Only supported offers from a fresh, verified scan can be run. **Run** and **Run again** each open a separate confirmation because a run can incur charges. A recorded run means an attempt started. Check the subscription, charges and renewal date in Google Play to verify the outcome.
+On startup, the default dashboard shows saved offer history. It runs **Step 1** automatically only when no history has been saved. It lists offers without starting checkout, though its environment checks can prepare ADB and Frida. Use **Scan again** to refresh the **Offer History** list. The toolkit keeps previously observed offers locally, with separate history for verified accounts and for scans where the account could not be verified. Only supported offers from a fresh, verified scan can be run. **Run** and **Run again** each open a separate confirmation because a run can incur charges. A recorded run means an attempt started. Check the subscription, charges and renewal date in Google Play to verify the outcome.
 
 The step selection and guided-sequence controls below apply when the dashboard is opened with an explicit step or sequence option. The default dashboard uses the individual offer buttons.
 

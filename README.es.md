@@ -1,6 +1,6 @@
 # ePlus AI Toolkit — Español
 
-<!-- Source README.md git-blob: 3d2463a6568fef2adb5aafc86760c103aec1756e -->
+<!-- Source README.md git-blob: 56764cd9a0d62d77dfc5d251a01bdf25dd8c2e43 -->
 
 [English](README.md) · [Tiếng Việt](README.vi.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · **Español** · [Français](README.fr.md)
 
@@ -132,7 +132,7 @@ Usa una versión que incluya `run-linux.sh`. El script abre el panel e instala l
 
 ## 3. Usar el panel Textual
 
-El panel predeterminado ejecuta **Step 1** al abrirse para consultar las ofertas. Puede preparar ADB y Frida, pero no inicia un pago. Pulsa **Scan again** para actualizar **Offer History**. La herramienta guarda en el equipo las ofertas detectadas, por cuenta verificada y por separado si no se pudo verificar la cuenta. Solo pueden ejecutarse las ofertas compatibles de una consulta reciente y verificada. **Run** y **Run again** requieren una confirmación en cada intento porque pueden generar cargos. El historial solo registra que se inició un intento. Comprueba la suscripción, los cargos y la fecha de renovación en Google Play.
+Al abrirse, el panel predeterminado muestra el historial guardado. Solo ejecuta **Step 1** automáticamente cuando aún no hay historial. Puede preparar ADB y Frida, pero no inicia un pago. Pulsa **Scan again** para actualizar **Offer History**. La herramienta guarda en el equipo las ofertas detectadas, por cuenta verificada y por separado si no se pudo verificar la cuenta. Solo pueden ejecutarse las ofertas compatibles de una consulta reciente y verificada. **Run** y **Run again** requieren una confirmación en cada intento porque pueden generar cargos. El historial solo registra que se inició un intento. Comprueba la suscripción, los cargos y la fecha de renovación en Google Play.
 
 La selección de pasos y la secuencia guiada que se describen a continuación están disponibles al abrir el panel con una opción explícita de paso o secuencia. El panel predeterminado usa los botones de cada oferta.
 

@@ -1,6 +1,6 @@
 # ePlus AI Toolkit — Français
 
-<!-- Source README.md git-blob: 3d2463a6568fef2adb5aafc86760c103aec1756e -->
+<!-- Source README.md git-blob: 56764cd9a0d62d77dfc5d251a01bdf25dd8c2e43 -->
 
 [English](README.md) · [Tiếng Việt](README.vi.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · **Français**
 
@@ -132,7 +132,7 @@ Utilisez une version qui contient `run-linux.sh`. Le script ouvre l’interface 
 
 ## 3. Interface Textual
 
-À l’ouverture, le tableau de bord par défaut lance **Step 1** pour rechercher les offres. Cette étape peut préparer ADB et Frida, sans lancer de paiement. Cliquez sur **Scan again** pour actualiser **Offer History**. L’outil conserve sur l’appareil les offres déjà détectées, par compte vérifié, avec un historique distinct pour les recherches sans compte vérifié. Seules les offres prises en charge trouvées lors d’une recherche récente et vérifiée peuvent être exécutées. **Run** et **Run again** demandent une confirmation à chaque tentative, car des frais peuvent s’appliquer. L’historique indique qu’une tentative a commencé. Vérifiez l’abonnement, les frais et la date de renouvellement dans Google Play.
+À l’ouverture, le tableau de bord par défaut affiche l’historique enregistré. Il lance **Step 1** automatiquement uniquement si aucun historique n’a été enregistré. Cette étape peut préparer ADB et Frida, sans lancer de paiement. Cliquez sur **Scan again** pour actualiser **Offer History**. L’outil conserve sur l’appareil les offres déjà détectées, par compte vérifié, avec un historique distinct pour les recherches sans compte vérifié. Seules les offres prises en charge trouvées lors d’une recherche récente et vérifiée peuvent être exécutées. **Run** et **Run again** demandent une confirmation à chaque tentative, car des frais peuvent s’appliquer. L’historique indique qu’une tentative a commencé. Vérifiez l’abonnement, les frais et la date de renouvellement dans Google Play.
 
 La sélection des étapes et le parcours guidé ci-dessous s’appliquent lorsque le tableau de bord est ouvert avec une option d’étape ou de séquence. Le tableau de bord par défaut utilise les boutons propres à chaque offre.
 
