@@ -496,7 +496,7 @@ class GoogleAITUI(App[None]):
                                 yield Static("Runs one step; no next step is automatic.", id="mode_hint")
                             yield Button("Run sequence from step", id="sequence")
                             yield Button("Run all", id="run_all")
-                            yield Static("Steps 2–5 can open checkout and require confirmation.", id="read_only")
+                            yield Static("Steps 2–4 use the existing checkout flow. Additional SKU offers are information-only unless supported.", id="read_only")
                     with Vertical(id="status_panel"):
                         yield Static("LIVE STATUS", classes="section")
                         yield Static("Waiting for your action.", id="activity")
@@ -911,6 +911,8 @@ class GoogleAITUI(App[None]):
             return
         nodes = self.query(f"#stage_{step}")
         if len(nodes):
+            if step >= 5 and not self._extra_offers[step - 5].legacy_checkout_supported:
+                marker = "ⓘ"  # ProductDetails only; checkout is not implemented.
             nodes.first().update(f"{marker}  {label}")
 
     def _set_message(self, value: str) -> None:
@@ -942,11 +944,11 @@ class GoogleAITUI(App[None]):
                 self._set_workflow(step, "pending")
             elif index - 1 < len(existing):
                 widget = existing[index - 1]
-                widget.update(f"○  {offer_step_label(step, offer)}")
+                widget.update(f"{'○' if offer.legacy_checkout_supported else 'ⓘ'}  {offer_step_label(step, offer)}")
                 widget.display = True
             else:
                 self.query_one("#workflow", Vertical).mount(
-                    Static(f"○  {offer_step_label(step, offer)}",
+                    Static(f"{'○' if offer.legacy_checkout_supported else 'ⓘ'}  {offer_step_label(step, offer)}",
                            id=f"stage_{step}", classes="workflow-step extra-offer-step")
                 )
         for widget in existing[max(0, len(self._extra_offers) - 1):]:
