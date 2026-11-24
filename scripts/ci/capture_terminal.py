@@ -38,7 +38,7 @@ CASES = [
      ("SKU: g1.play.20tb", "No subscription offers", "Not returned",
       "Check Device & Offers")),
     ("11-step1-discovered-offers", "sku_extra_steps", 110, 35,
-     ("5. Optional", "6. Ultra", "SKU: g1.play.20tb", "19.99 USD")),
+     ("5. +6mo optional", "6. 20TB", "SKU: g1.play.20tb", "19.99 USD")),
 ]
 
 
