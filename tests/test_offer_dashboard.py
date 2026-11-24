@@ -67,6 +67,15 @@ class OfferDashboardTests(unittest.IsolatedAsyncioTestCase):
                             app.screen.dismiss(False)
                             await pilot.pause()
                             self.assertEqual(worker.call_count, 1)
+                            app.offer_pressed(Button.Pressed(button))
+                            await pilot.pause()
+                            self.assertIsInstance(app.screen, Approval)
+                            scanned = app._current_offers
+                            app._current_offers = scanned[1:]
+                            app.screen.dismiss(True)
+                            await pilot.pause()
+                            self.assertEqual(worker.call_count, 1)
+                            app._current_offers = scanned
                             button.press()
                             await pilot.pause()
                             app.screen.dismiss(True)
@@ -83,7 +92,7 @@ class OfferDashboardTests(unittest.IsolatedAsyncioTestCase):
                             finish_scan([initial])
                             await pilot.pause()
                             rows = list(app.query(OfferRow))
-                            self.assertIn("Earlier scan", rows[1].description)
+                            self.assertIn("Saved", rows[1].description)
                             self.assertIn("Absent from latest scan", rows[1].description)
                             self.assertTrue(rows[1].query_one(Button).disabled)
                             saved = read_offer_history(repo, account)
@@ -98,11 +107,11 @@ class OfferDashboardTests(unittest.IsolatedAsyncioTestCase):
                                                       "missing_skus": ["g1.play.20tb"]},
                                                      "test-device", account, app._extra_scan_generation)
                             await pilot.pause()
-                            extra = next(row for row in app.query(OfferRow) if "g1.30tb" in row.description)
+                            extra = next(row for row in app.query(OfferRow) if "30 TB" in row.description)
                             self.assertIn("Listing only", extra.description)
                             self.assertFalse(list(extra.query(Button)))
                             self.assertTrue(app.query_one("#sku_details").display)
-                            self.assertIn("Not returned · g1.play.20tb",
+                            self.assertIn("Not returned · Google One 20 TB",
                                           str(app.query_one("#sku_coverage").render()))
                             self.assertEqual(len(read_offer_history(repo, account)), 3)
             reopened = GoogleAITUI(repo=repo, offer_dashboard=True)

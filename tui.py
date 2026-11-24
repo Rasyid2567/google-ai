@@ -12,6 +12,7 @@ import json
 import os
 import signal
 from collections import deque
+from collections.abc import Callable
 from pathlib import Path
 import re
 import subprocess
@@ -38,6 +39,12 @@ from stage_history import latest_history, read_history, record_history, read_off
 from stage_history import latest_offer_history
 
 RESEARCH_SKUS = ("g1.2tb.ai.subs_variant", "g1.play.20tb", "g1.play.ai.pro", "g1.30tb")
+SKU_LABELS = {
+    "g1.2tb.ai.subs_variant": "Google AI Pro",
+    "g1.play.20tb": "Google One 20 TB",
+    "g1.play.ai.pro": "Google AI Pro (Play)",
+    "g1.30tb": "Google One 30 TB",
+}
 
 
 class OfferRow(Horizontal):
@@ -45,15 +52,18 @@ class OfferRow(Horizontal):
                  verified_scan: bool) -> None:
         super().__init__(classes="offer-row")
         self.step = offer_step(offer)
-        product = "Google AI Pro" if offer["product"] == "g1.2tb.ai.subs_variant" else offer["product"]
+        self.offer_identity = (offer["product"], offer["id"], offer["period"], offer["micros"])
+        product = SKU_LABELS.get(offer["product"], offer["product"])
         offer_id = offer["id"]
         if self.step is not None:
             name = STAGES[self.step].label
         elif offer_id in ("null", "(unavailable)"):
             name = product
+        elif offer_id == "base-plan-monthly":
+            name = product
         else:
             name = f"{product} / {offer_id}"
-        source = "Latest scan" if current else "Earlier scan"
+        source = "Latest scan" if current else "Saved"
         if self.step is None:
             attempt = "Listing only"
         elif ran:
@@ -388,6 +398,8 @@ class GoogleAITUI(App[None]):
     }
     #elapsed, #activity { color: #95c4dd; }
     #offer_history { height: auto; }
+    #offer_list_title { dock: top; height: 1; padding: 0 1; background: #162e48; color: #91e3ff; text-style: bold; }
+    .offer-group { height: auto; padding: 0 1; margin-bottom: 1; color: #91e3ff; text-style: bold; }
     #sku_coverage { display: none; height: auto; color: #afcce3; margin: 0 1 1 1; }
     #sku_details { display: none; height: auto; margin: 0; }
     .offer-row { height: auto; min-height: 3; background: #12263d; margin-bottom: 1; }
@@ -543,6 +555,8 @@ class GoogleAITUI(App[None]):
                     yield Button("Reload toolkit", id="reload")
                     yield Button("Exit toolkit", id="exit")
                 with Vertical(id="results"):
+                    if self.offer_dashboard:
+                        yield Static("Google Play offers and plans", id="offer_list_title", markup=False)
                     yield TechnicalLog(id="debug_log", wrap=True, highlight=False, markup=False)
                     with Vertical(id="welcome_panel"):
                         if not self.offer_dashboard:
@@ -582,7 +596,7 @@ class GoogleAITUI(App[None]):
                     with Vertical(id="status_panel"):
                         if self.offer_dashboard:
                             with Horizontal(id="offer_toolbar"):
-                                yield Static("Offer History", id="welcome")
+                                yield Static("Offer check", id="welcome")
                                 yield Button("Check Device & Offers", id="quickstart", variant="primary")
                                 yield Button("Stop check", id="stop", disabled=True)
                         yield Static("LIVE STATUS", classes="section")
@@ -599,9 +613,9 @@ class GoogleAITUI(App[None]):
                         yield Static("Review Google Play pricing and renewal terms "
                                      "before each checkout.", id="hint")
                     if self.offer_dashboard:
-                        yield Static("", id="sku_coverage", markup=False)
                         with Vertical(id="offer_history"):
                             yield Static("Offers will appear here after the scan.")
+                        yield Static("", id="sku_coverage", markup=False)
                         with Collapsible(title="SKU details and price phases", id="sku_details"):
                             yield RichLog(id="offer_view", wrap=True, highlight=False, markup=False)
         if not self.offer_dashboard:
@@ -1096,7 +1110,8 @@ class GoogleAITUI(App[None]):
         self._update_run_mode()
 
     def _confirm_stage(self, step: int, sequence: bool,
-                       previous_verified: bool = False, *, retry: bool = False) -> None:
+                       previous_verified: bool = False, *, retry: bool = False,
+                       still_selected: Callable[[], bool] | None = None) -> None:
         if self.busy or self._diagnosing:
             return
         if step >= 5:
@@ -1164,8 +1179,15 @@ class GoogleAITUI(App[None]):
                        "pending or the plan already changed. This retries only the "
                        "selected step, with a fresh environment, account and offer check.\n\n"
                        + message)
-        self.push_screen(Approval(title, message),
-                         lambda approved: self._start(step, sequence) if approved else None)
+        def confirm(approved: bool) -> None:
+            if not approved:
+                return
+            if still_selected is not None and not still_selected():
+                self._set_message("The selected offer changed. Scan again before running it.")
+                return
+            self._start(step, sequence)
+
+        self.push_screen(Approval(title, message), confirm)
 
     def _render_offer_catalog(self) -> None:
         """Display original offers and the same Step 1 SKU scan in one list."""
@@ -1251,11 +1273,24 @@ class GoogleAITUI(App[None]):
     @on(Button.Pressed, ".offer-run")
     def offer_pressed(self, event: Button.Pressed) -> None:
         row = event.button.parent
-        if (isinstance(row, OfferRow) and not event.button.disabled and row.step is not None
-                and not self._real_step1_run
-                and self._catalog_account == self._offer_ready_account
-                and any(runnable_offer_step(item) == row.step for item in self._current_offers)):
-            self._confirm_stage(row.step, False, retry=row.ran)
+        if not isinstance(row, OfferRow) or event.button.disabled or row.step is None:
+            return
+        generation = self._extra_scan_generation
+        account = self._offer_ready_account
+        device = self._offer_ready_device
+
+        def still_selected() -> bool:
+            return (self._offer_check_ready and not self._real_step1_run
+                    and generation == self._extra_scan_generation
+                    and account == self._catalog_account == self._offer_ready_account
+                    and device == self._offer_ready_device
+                    and any(
+                        (item["product"], item["id"], item["period"], item["micros"]) == row.offer_identity
+                        and runnable_offer_step(item) == row.step for item in self._current_offers
+                    ))
+
+        if still_selected():
+            self._confirm_stage(row.step, False, retry=row.ran, still_selected=still_selected)
 
     async def _render_offer_history(self) -> None:
         account = self._catalog_account
@@ -1282,6 +1317,8 @@ class GoogleAITUI(App[None]):
                                  verified_scan=self._offer_check_ready))
         container = self.screen_stack[0].query_one("#offer_history", Vertical)
         coverage = self.screen_stack[0].query_one("#sku_coverage", Static)
+        title = self.screen_stack[0].query_one("#offer_list_title", Static)
+        title.update(f"Google Play offers and plans · {len(rows)} results")
         report = self._sku_report or {}
         products = {item["product"] for item in current_rows}
         products.update(item["product"] for item in observed_offers(saved_records))
@@ -1291,16 +1328,21 @@ class GoogleAITUI(App[None]):
             if isinstance(values, list):
                 matching = [sku for sku in RESEARCH_SKUS if sku in values]
                 if matching:
-                    labels.append(f"{label} · {', '.join(matching)}")
+                    labels.append(f"{label} · {', '.join(SKU_LABELS[sku] for sku in matching)}")
         if not report and saved_records:
             absent = [sku for sku in RESEARCH_SKUS if sku not in products]
             if absent:
-                labels.append(f"No saved result · {', '.join(absent)}")
+                labels.append(f"No saved result · {', '.join(SKU_LABELS[sku] for sku in absent)}")
         coverage.update("\n".join(labels))
         coverage.display = bool(labels)
         await container.remove_children()
         if rows:
-            await container.mount(*rows)
+            for label, group in (
+                ("Subscription offers", [row for row in rows if row.step is not None]),
+                ("Other plans and offers · details only", [row for row in rows if row.step is None]),
+            ):
+                if group:
+                    await container.mount(Static(f"{label} ({len(group)})", classes="offer-group"), *group)
         else:
             await container.mount(Static("No saved offers to display."))
 
