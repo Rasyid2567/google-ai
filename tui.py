@@ -25,7 +25,7 @@ from textual import on, work
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
-from textual.widgets import Button, Collapsible, Footer, Header, Link, RichLog, Select, Static
+from textual.widgets import Button, Footer, Header, Link, RichLog, Select, Static
 
 from sku_check_core import render_result as render_sku_result
 from offer_discovery import (ExtraOffer, parse_step1, parse_sku_check,
@@ -397,10 +397,9 @@ class GoogleAITUI(App[None]):
         border: round #285a80; background: #081a2d;
     }
     #elapsed, #activity { color: #95c4dd; }
-    #offer_history, #sku_only_offers { height: auto; }
+    #offer_history { height: auto; }
     #offer_list_title { dock: top; height: 1; padding: 0 1; background: #162e48; color: #91e3ff; text-style: bold; }
     #sku_coverage { display: none; height: auto; color: #afcce3; margin: 0 1 1 1; }
-    #sku_details { display: none; height: auto; margin: 0; }
     .offer-row { height: auto; min-height: 3; background: #12263d; margin-bottom: 1; }
     .offer-row Static { width: 1fr; height: auto; padding: 0 1; }
     .offer-row Button { width: 13; min-width: 13; height: 3; }
@@ -605,8 +604,7 @@ class GoogleAITUI(App[None]):
                         yield Static("Check the device and offers to begin.", id="message")
                         yield Static("", id="step_result")
                         yield Static("AVAILABLE OFFERS · SKU / OFFER / PRICE PHASES", id="offers_title")
-                        if not self.offer_dashboard:
-                            yield RichLog(id="offer_view", wrap=True, highlight=False, markup=False)
+                        yield RichLog(id="offer_view", wrap=True, highlight=False, markup=False)
                         yield Static("Elapsed: --", id="elapsed")
                         yield Button("Completed action on Android", id="manual", disabled=True)
                         yield Static("Review Google Play pricing and renewal terms "
@@ -614,10 +612,7 @@ class GoogleAITUI(App[None]):
                     if self.offer_dashboard:
                         with Vertical(id="offer_history"):
                             yield Static("Offers will appear here after the scan.")
-                        with Collapsible(title="SKU details and price phases", id="sku_details"):
-                            yield Static("", id="sku_coverage", markup=False)
-                            yield Vertical(id="sku_only_offers")
-                            yield RichLog(id="offer_view", wrap=True, highlight=False, markup=False)
+                        yield Static("", id="sku_coverage", markup=False)
         if not self.offer_dashboard:
             yield Footer()
 
@@ -1191,6 +1186,8 @@ class GoogleAITUI(App[None]):
 
     def _render_offer_catalog(self) -> None:
         """Display original offers and the same Step 1 SKU scan in one list."""
+        if self.offer_dashboard:
+            return
         view = self.query_one("#offer_view", RichLog)
         view.clear()
         for line in offer_explorer_lines(self._offer_report):
@@ -1205,10 +1202,7 @@ class GoogleAITUI(App[None]):
             for line in render_sku_result(self._sku_report).splitlines():
                 view.write(line)
         view.display = True
-        if self.offer_dashboard:
-            self.query_one("#sku_details", Collapsible).display = True
-        else:
-            self.query_one("#offers_title", Static).display = True
+        self.query_one("#offers_title", Static).display = True
 
     @work(thread=True, exclusive=True, group="step1-known-skus")
     def scan_known_skus(self, device: str, account: str,
@@ -1317,15 +1311,10 @@ class GoogleAITUI(App[None]):
                                  verified_scan=self._offer_check_ready))
         screen = self.screen_stack[0]
         container = screen.query_one("#offer_history", Vertical)
-        details = screen.query_one("#sku_details", Collapsible)
-        listing = details.query_one("#sku_only_offers", Vertical)
-        coverage = details.query_one("#sku_coverage", Static)
-        runnable = [row for row in rows if row.step is not None]
-        listing_only = [row for row in rows if row.step is None]
+        coverage = screen.query_one("#sku_coverage", Static)
         screen.query_one("#offer_list_title", Static).update(
-            f"Google Play offers · {len(runnable)} supported"
+            f"Google Play offers · {len(rows)}"
         )
-        details.title = f"SKU details and price phases ({len(listing_only)} listing only)"
         report = self._sku_report or {}
         products = {item["product"] for item in current_rows}
         products.update(item["product"] for item in observed_offers(saved_records))
@@ -1342,15 +1331,11 @@ class GoogleAITUI(App[None]):
                 labels.append(f"No saved result · {', '.join(SKU_LABELS[sku] for sku in absent)}")
         coverage.update("\n".join(labels))
         coverage.display = bool(labels)
-        details.display = bool(listing_only or labels or details.query_one("#offer_view", RichLog).display)
         await container.remove_children()
-        await listing.remove_children()
-        if runnable:
-            await container.mount(*runnable)
+        if rows:
+            await container.mount(*rows)
         else:
-            await container.mount(Static("No offers with a supported Run action."))
-        if listing_only:
-            await listing.mount(*listing_only)
+            await container.mount(Static("No offers to display."))
 
     def _save_offer_scan(self, offers: list[dict]) -> None:
         try:

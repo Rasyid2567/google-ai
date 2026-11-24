@@ -110,11 +110,8 @@ class OfferDashboardTests(unittest.IsolatedAsyncioTestCase):
                             extra = next(row for row in app.query(OfferRow) if "30 TB" in row.description)
                             self.assertIn("Listing only", extra.description)
                             self.assertFalse(list(extra.query(Button)))
-                            self.assertTrue(app.query_one("#sku_details").display)
-                            self.assertTrue(app.query_one("#sku_details").collapsed)
-                            self.assertEqual(list(app.query_one("#sku_only_offers").query(OfferRow)), [extra])
-                            self.assertTrue(all(row.step is not None
-                                                for row in app.query_one("#offer_history").query(OfferRow)))
+                            self.assertFalse(list(app.query("#sku_details")))
+                            self.assertIn(extra, list(app.query_one("#offer_history").query(OfferRow)))
                             self.assertIn("Not returned · Google One 20 TB",
                                           str(app.query_one("#sku_coverage").render()))
                             self.assertEqual(len(read_offer_history(repo, account)), 3)
@@ -131,8 +128,7 @@ class OfferDashboardTests(unittest.IsolatedAsyncioTestCase):
                     self.assertFalse(reopened.query_one("#elapsed").display)
                     rows = list(reopened.query(OfferRow))
                     self.assertEqual(len(rows), 3)
-                    self.assertEqual(len(list(reopened.query_one("#offer_history").query(OfferRow))), 2)
-                    self.assertEqual(len(list(reopened.query_one("#sku_only_offers").query(OfferRow))), 1)
+                    self.assertEqual(list(reopened.query_one("#offer_history").query(OfferRow)), rows)
                     self.assertEqual(str(rows[0].query_one(Button).label), "Run again")
                     self.assertTrue(all(button.disabled for button in reopened.query(".offer-run")))
                     self.assertTrue(all("Scan required" in row.description for row in rows if row.step is not None))
