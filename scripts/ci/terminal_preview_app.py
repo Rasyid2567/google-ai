@@ -54,6 +54,9 @@ class PreviewApp(GoogleAITUI):
                      "micros": "0", "period": "P6M"},
                     {"product": "g1.play.20tb", "id": "promo-2026",
                      "micros": "19990000", "period": "P1M"},
+                    # Real-world base-plan sentinel: must stay out of Steps 5+.
+                    {"product": "g1.play.20tb", "id": "null",
+                     "micros": "19990000", "period": "P1M"},
                 ]
             self._offer_report = {"status": "listed", "offers": primary}
             requested = ["g1.2tb.ai.subs_variant", "g1.play.20tb",
@@ -71,6 +74,10 @@ class PreviewApp(GoogleAITUI):
                                  "billing_period": "P1Y"}]},
                     {"sku": "g1.play.20tb",
                      "offer_id": "promo-2026", "base_plan_id": "monthly",
+                     "phases": [{"price_amount_micros": "19990000",
+                                 "currency": "USD", "billing_period": "P1M"}]},
+                    {"sku": "g1.play.20tb",
+                     "offer_id": "null", "base_plan_id": "monthly",
                      "phases": [{"price_amount_micros": "19990000",
                                  "currency": "USD", "billing_period": "P1M"}]},
                 ]
