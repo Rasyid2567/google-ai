@@ -1,6 +1,6 @@
 # ePlus AI Toolkit — Español
 
-<!-- Source README.md git-blob: 00970df832b386d5507a536a7348ded599d43c54 -->
+<!-- Source README.md git-blob: 623bb35efcdfdcf87b36e72bc21046d035e0a491 -->
 
 [English](README.md) · [Tiếng Việt](README.vi.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · **Español** · [Français](README.fr.md)
 
@@ -128,6 +128,52 @@ Usa una versión que incluya `run-linux.sh`. El script abre el panel e instala l
 **Android 16 y versiones posteriores.** El script de Linux se detiene antes de configurar el dispositivo porque Frida 16.5.9 es anterior a la compatibilidad con Android 16. Puedes comprobar la conexión USB con **Diagnose Android connection**.
 
 **Los pasos 2–5 pueden generar cargos reales en Google Play.** Cada uno requiere su propia aprobación, la verificación de la cuenta de Play activa y una consulta reciente que identifique exactamente la oferta con un primer período de precio cero. Antes de avanzar, verifica la suscripción y la fecha de renovación en Google Play. Los pagos en Linux se comprueban con simulaciones. Sigue pendiente la validación completa en un dispositivo real. [Instalación en Linux, solución de problemas de USB y verificación](docs/LINUX.md).
+
+### Waydroid + Root en Linux (Guía del fork — `Rasyid2567/google-ai`)
+
+> [!NOTE]
+> **Adición propia de este fork (no pertenece al proyecto original `hoangsvit/google-ai`).** Dado que MuMuPlayer no es compatible con Linux y muchos teléfonos Android tienen el gestor de arranque bloqueado, este fork personal añade una guía paso a paso para **Waydroid + Root (`waydroidsu` / KitsuneMagisk)** y dos parches de compatibilidad en `ultra0.py` (priorizar `su -c id` antes de `adb root` y respaldo con `am start` cuando `monkey` falla). **Solo los pasos 0–1 se han probado en Waydroid (Android 13, `x86_64`); los pasos 2–5 siguen siendo operaciones de pago reales que requieren tu aprobación y verificación en Google Play.**
+
+Sigue estos pasos en orden:
+
+1. **Paso 1 — Verificar requisitos en Linux:** sesión **Wayland**, kernel con soporte `binder` (`grep binder /proc/filesystems`), `waydroid`, `adb`, `git`, `curl` y `python3` **3.10+**.
+2. **Paso 2 — Inicializar Waydroid con imagen GAPPS:**
+   ```sh
+   sudo waydroid init -s GAPPS -f
+   sudo chmod 755 /var/lib/waydroid
+   sudo chmod 644 /var/lib/waydroid/waydroid.cfg
+   ```
+3. **Paso 3 — Instalar Root con `waydroidsu` (`wsu` v2.0.0 / KitsuneMagisk):**
+   ```sh
+   mkdir -p /tmp/wsu && cd /tmp/wsu
+   curl -fsSLO https://github.com/AmanCode22/waydroidsu/releases/download/v2.0.0/wsu-2.0.0-x86_64-linux.tar.gz
+   tar -xzf wsu-2.0.0-x86_64-linux.tar.gz
+   waydroid session stop
+   sudo ./wsu install
+   sudo systemctl restart waydroid-container
+   waydroid show-full-ui &
+   # Cuando Waydroid muestre la pantalla de inicio:
+   sudo /tmp/wsu/wsu setup
+   ```
+   Abre **KitsuneMagisk** en Waydroid (pulsa **OK** si pide actualizar) y configura **Settings → Superuser → Automatic Response → Grant**.
+4. **Paso 4 — Corregir red y DNS (si usas UFW, Docker o Tailscale):** permite los puertos 53/67 y el reenvío en `waydroid0`; si falla la resolución DNS (p. ej. Tailscale `100.100.100.100`), desactiva `sudo tailscale set --accept-dns=false` o añade `nameserver 8.8.8.8` al inicio de `/etc/resolv.conf`.
+5. **Paso 5 — Preparar Google Play Store y Google One:** si aparece *"Device is not certified"*, registra el Android ID en `https://www.google.com/android/uncertified/` y reinicia Waydroid; inicia sesión en **Google Play Store** e instala **Google One** (nativo `x86_64`, sin necesidad de `libhoudini`). Si la ventana para añadir método de pago se oscurece, agrégalo desde el navegador del PC en `https://play.google.com/store/paymentmethods`.
+6. **Paso 6 — Conectar ADB y comprobar root:**
+   ```sh
+   IP=$(waydroid status | awk '/IP address:/ {print $3}')
+   adb connect "${IP}:5555"
+   adb devices
+   adb shell "su -c id"
+   ```
+   Comprueba que `adb devices` muestre **un único** dispositivo como `device` y que `su -c id` devuelva `uid=0(root)`.
+7. **Paso 7 — Ejecutar el kit (primero en modo de solo lectura):**
+   ```sh
+   cd google-ai
+   sh run-linux.sh --check
+   sh run-linux.sh --list
+   sh run-linux.sh
+   ```
+   Consulta la solución de problemas de Waydroid en [docs/LINUX.md](docs/LINUX.md).
 
 
 ## 3. Usar el panel Textual

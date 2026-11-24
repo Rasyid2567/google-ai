@@ -1,6 +1,6 @@
 # ePlus AI Toolkit — Français
 
-<!-- Source README.md git-blob: 00970df832b386d5507a536a7348ded599d43c54 -->
+<!-- Source README.md git-blob: 623bb35efcdfdcf87b36e72bc21046d035e0a491 -->
 
 [English](README.md) · [Tiếng Việt](README.vi.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · **Français**
 
@@ -128,6 +128,52 @@ Utilisez une version qui contient `run-linux.sh`. Le script ouvre l’interface 
 **Android 16 et versions ultérieures.** Le script Linux s’arrête avant de configurer l’appareil, car Frida 16.5.9 est antérieur à la prise en charge d’Android 16. **Diagnose Android connection** permet toujours de vérifier la connexion USB.
 
 **Les étapes 2–5 peuvent entraîner de vrais prélèvements sur Google Play.** Pour chacune, il faut une confirmation distincte, vérifier le compte Play actif et obtenir un résultat récent qui correspond exactement à l’offre dont la première période coûte zéro. Avant de poursuivre, vérifiez l’abonnement et la date de renouvellement dans Google Play. Les paiements sous Linux sont testés par simulation. La validation complète sur un appareil réel reste à faire. [Installation sous Linux, dépannage USB et vérification](docs/LINUX.md).
+
+### Waydroid + Root sous Linux (Guide du fork — `Rasyid2567/google-ai`)
+
+> [!NOTE]
+> **Ajout spécifique à ce fork (absent du dépôt d’origine `hoangsvit/google-ai`).** Comme MuMuPlayer n’est pas disponible sous Linux et que de nombreux téléphones Android ont un bootloader verrouillé, ce fork personnel ajoute un guide étape par étape pour **Waydroid + Root (`waydroidsu` / KitsuneMagisk)** ainsi que deux correctifs Waydroid dans `ultra0.py` (`su -c id` vérifié avant `adb root`, et repli `am start` si `monkey` échoue). **Seules les étapes 0–1 ont été vérifiées sur Waydroid (Android 13, `x86_64`) ; les étapes 2–5 restent des opérations facturables exigeant votre validation et un contrôle dans Google Play.**
+
+Suivez ces étapes dans l’ordre :
+
+1. **Étape 1 — Vérifier les prérequis Linux :** session **Wayland**, noyau avec prise en charge `binder` (`grep binder /proc/filesystems`), `waydroid`, `adb`, `git`, `curl` et `python3` **3.10+**.
+2. **Étape 2 — Initialiser Waydroid avec l’image GAPPS :**
+   ```sh
+   sudo waydroid init -s GAPPS -f
+   sudo chmod 755 /var/lib/waydroid
+   sudo chmod 644 /var/lib/waydroid/waydroid.cfg
+   ```
+3. **Étape 3 — Installer Root avec `waydroidsu` (`wsu` v2.0.0 / KitsuneMagisk) :**
+   ```sh
+   mkdir -p /tmp/wsu && cd /tmp/wsu
+   curl -fsSLO https://github.com/AmanCode22/waydroidsu/releases/download/v2.0.0/wsu-2.0.0-x86_64-linux.tar.gz
+   tar -xzf wsu-2.0.0-x86_64-linux.tar.gz
+   waydroid session stop
+   sudo ./wsu install
+   sudo systemctl restart waydroid-container
+   waydroid show-full-ui &
+   # Une fois l’écran d’accueil Android affiché :
+   sudo /tmp/wsu/wsu setup
+   ```
+   Ouvrez **KitsuneMagisk** dans Waydroid (appuyez sur **OK** si une mise à niveau est proposée), puis réglez **Settings → Superuser → Automatic Response → Grant**.
+4. **Étape 4 — Corriger le réseau et le DNS (UFW, Docker ou Tailscale) :** autorisez les ports 53/67 et le routage sur `waydroid0` ; en cas d’échec DNS (ex. Tailscale `100.100.100.100`), exécutez `sudo tailscale set --accept-dns=false` ou placez `nameserver 8.8.8.8` en tête de `/etc/resolv.conf`.
+5. **Étape 5 — Préparer Google Play Store et Google One :** si l’appareil n’est pas certifié, enregistrez l’Android ID sur `https://www.google.com/android/uncertified/` puis redémarrez Waydroid ; connectez-vous au **Google Play Store** et installez **Google One** (natif `x86_64`, `libhoudini` inutile). Si la fenêtre d’ajout de moyen de paiement se fige, ajoutez-le depuis votre navigateur sur `https://play.google.com/store/paymentmethods`.
+6. **Étape 6 — Connecter ADB et vérifier l’accès root :**
+   ```sh
+   IP=$(waydroid status | awk '/IP address:/ {print $3}')
+   adb connect "${IP}:5555"
+   adb devices
+   adb shell "su -c id"
+   ```
+   Vérifiez que `adb devices` affiche **un seul** appareil en état `device` et que `su -c id` retourne `uid=0(root)`.
+7. **Étape 7 — Lancer la boîte à outils (vérifications en lecture seule d’abord) :**
+   ```sh
+   cd google-ai
+   sh run-linux.sh --check
+   sh run-linux.sh --list
+   sh run-linux.sh
+   ```
+   Consultez [docs/LINUX.md](docs/LINUX.md) pour le dépannage complet de Waydroid.
 
 
 ## 3. Interface Textual

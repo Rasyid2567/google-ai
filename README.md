@@ -135,6 +135,75 @@ The `main` branch is the stable entrypoint for Linux after this integration merg
 
 **Steps 2–5 can incur real Google Play charges.** Each requires separate approval, a verified current Play account and a fresh exact-match offer with a zero-priced first phase. Guided continuation requires verifying the subscription and renewal date in Google Play. Linux checkout coverage uses mocks, and an end-to-end device check is pending. [Linux setup, USB troubleshooting and verification](docs/LINUX.md).
 
+### Waydroid + Root on Linux (Fork Guide — `Rasyid2567/google-ai`)
+
+> [!NOTE]
+> **Fork-specific addition (not from upstream `hoangsvit/google-ai`).** Because MuMuPlayer does not support Linux and many physical Android phones have locked bootloaders, this personal fork adds a complete step-by-step **Waydroid + Root (`waydroidsu` / KitsuneMagisk)** guide and two Waydroid compatibility patches in `ultra0.py` (`su -c id` checked before `adb root` to avoid TCP ADB drops, and `am start` fallback when `monkey` fails with `SYS_KEYS has no physical keys`). **Only Steps 0–1 have been verified on Waydroid (Android 13, `x86_64`); Steps 2–5 remain real-billing operations requiring your own approval and Google Play verification.**
+
+Follow these steps in order:
+
+1. **Step 1 — Verify Linux prerequisites**
+   - A **Wayland** desktop session (`echo "$XDG_SESSION_TYPE"` → `wayland`) and a Linux kernel with Android `binder` support (`grep binder /proc/filesystems` → `nodev binder`).
+   - Installed packages: `waydroid`, Android SDK Platform-Tools (`adb`), `git`, `curl`, and `python3` **3.10+** (with `venv` and `pip`).
+2. **Step 2 — Initialize Waydroid with the GAPPS image**
+   ```sh
+   sudo waydroid init -s GAPPS -f
+   sudo chmod 755 /var/lib/waydroid
+   sudo chmod 644 /var/lib/waydroid/waydroid.cfg
+   ```
+   *(If `/var/lib/waydroid` was restricted to `0700`, the `chmod` lines allow your regular user to run `waydroid status` and `waydroid show-full-ui`.)*
+3. **Step 3 — Install Root (`waydroidsu` / KitsuneMagisk)**
+   Older `waydroid-script` Magisk links return HTTP 404. Use the maintained [`AmanCode22/waydroidsu`](https://github.com/AmanCode22/waydroidsu) (`wsu` v2.0.0) prebuilt binary for `x86_64`:
+   ```sh
+   mkdir -p /tmp/wsu && cd /tmp/wsu
+   curl -fsSLO https://github.com/AmanCode22/waydroidsu/releases/download/v2.0.0/wsu-2.0.0-x86_64-linux.tar.gz
+   tar -xzf wsu-2.0.0-x86_64-linux.tar.gz
+   waydroid session stop
+   sudo ./wsu install
+   sudo systemctl restart waydroid-container
+   waydroid show-full-ui &
+   ```
+   Wait until Waydroid reaches the Android home screen, then finish root setup:
+   ```sh
+   sudo /tmp/wsu/wsu setup
+   ```
+   Inside Waydroid, open **KitsuneMagisk** (if prompted *"Upgrade to full Magisk"*, tap **OK**), go to **Settings → Superuser → Automatic Response**, and set it to **Grant** so `adb shell "su -c ..."` is authorized automatically.
+4. **Step 4 — Fix Waydroid network & DNS (if using UFW, Docker or Tailscale)**
+   If Waydroid has no internet inside Android, allow `waydroid0` through your firewall:
+   ```sh
+   sudo ufw allow in on waydroid0 to any port 53
+   sudo ufw allow in on waydroid0 to any port 67
+   sudo ufw route allow in on waydroid0
+   sudo ufw route allow out on waydroid0
+   sudo iptables -I FORWARD -i waydroid0 -j ACCEPT
+   sudo iptables -I FORWARD -o waydroid0 -j ACCEPT
+   ```
+   If `ping 8.8.8.8` works inside Waydroid but `ping google.com` fails (for example when `/etc/resolv.conf` points to Tailscale DNS `100.100.100.100`), prepend public DNS or disable Tailscale DNS overwrite:
+   ```sh
+   sudo tailscale set --accept-dns=false
+   sudo sh -c 'printf "nameserver 8.8.8.8\nnameserver 1.1.1.1\n" | cat - /etc/resolv.conf > /etc/resolv.conf.tmp && mv /etc/resolv.conf.tmp /etc/resolv.conf'
+   ```
+5. **Step 5 — Prepare Google Play Store & Google One inside Waydroid**
+   - If Google Play shows *"Device is not certified"*, retrieve your Google Android ID, register it at `https://www.google.com/android/uncertified/`, wait 5–15 minutes, then restart Waydroid.
+   - Sign in to **Google Play Store**, install **Google One** (both ship native `x86_64` builds, so `libhoudini` is not required), and open **Google One** to confirm it uses the same Google account.
+   - *(Tip)* If the Play Store *Add payment method* dialog dims or freezes on Waydroid's landscape display, add your payment method from your desktop browser at `https://play.google.com/store/paymentmethods` using the same Google account.
+6. **Step 6 — Connect ADB and verify root**
+   ```sh
+   IP=$(waydroid status | awk '/IP address:/ {print $3}')
+   adb connect "${IP}:5555"
+   adb devices
+   adb shell "su -c id"
+   ```
+   Confirm `adb devices` shows **exactly one** device with status `device`, and `su -c id` prints `uid=0(root)`.
+7. **Step 7 — Run the toolkit (start read-only first)**
+   ```sh
+   cd google-ai
+   sh run-linux.sh --check   # Step 0: ADB, root & Frida 16.5.9
+   sh run-linux.sh --list    # Step 1: list offers (no checkout)
+   sh run-linux.sh           # Open the Textual dashboard
+   ```
+   See [docs/LINUX.md](docs/LINUX.md) for full Waydroid troubleshooting (frozen display wake-up, DNS/firewall details, and reconnecting ADB after reboot).
+
 
 ## Use the dashboard (recommended)
 

@@ -1,6 +1,6 @@
 # ePlus AI Toolkit — 日本語
 
-<!-- Source README.md git-blob: 00970df832b386d5507a536a7348ded599d43c54 -->
+<!-- Source README.md git-blob: 623bb35efcdfdcf87b36e72bc21046d035e0a491 -->
 
 [English](README.md) · [Tiếng Việt](README.vi.md) · [简体中文](README.zh-CN.md) · **日本語** · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md)
 
@@ -127,6 +127,52 @@ sh run-linux.sh
 **Android 16 以降:** 指定バージョンの Frida 16.5.9 は Android 16 に対応していないため、Linux の起動スクリプトは端末のセットアップを開始せずに停止します。USB 接続は **Diagnose Android connection** で確認できます。
 
 **Steps 2–5 では、Google Play で実際に請求が発生することがあります。** 各ステップで個別に承認し、現在の Play アカウントと、直前の照会で対象と完全に一致する特典の初回期間の価格が 0 であることを確認する必要があります。次のステップに進む前に、Google Play で登録状況と更新日を確認してください。Linux の決済は模擬テストで検証しており、実機での一連の動作確認は未完了です。 [Linux の設定、USB のトラブル対処と検証](docs/LINUX.md).
+
+### Linux での Waydroid + Root（フォーク独自ガイド — `Rasyid2567/google-ai`）
+
+> [!NOTE]
+> **フォーク独自の追加（上流 `hoangsvit/google-ai` 由来ではありません）。** MuMuPlayer が Linux 非対応で、ブートローダーがロックされた実機も多いため、この個人フォークでは **Waydroid + Root（`waydroidsu` / KitsuneMagisk）** の手順と `ultra0.py` への Waydroid 互換パッチ 2 件（`adb root` より先に `su -c id` を確認、`monkey` 失敗時の `am start` フォールバック）を追加しています。**Waydroid（Android 13, `x86_64`）で検証済みなのは Steps 0–1 のみで、Steps 2–5 は実際の課金操作となり、ご自身の承認と Google Play での確認が必要です。**
+
+以下の手順を順番に実行してください：
+
+1. **手順 1 — Linux 前提条件の確認:** **Wayland** セッション、Android `binder` 対応カーネル（`grep binder /proc/filesystems`）、`waydroid`、`adb`、`git`、`curl`、`python3` **3.10+**。
+2. **手順 2 — GAPPS イメージで Waydroid を初期化:**
+   ```sh
+   sudo waydroid init -s GAPPS -f
+   sudo chmod 755 /var/lib/waydroid
+   sudo chmod 644 /var/lib/waydroid/waydroid.cfg
+   ```
+3. **手順 3 — `waydroidsu`（`wsu` v2.0.0 / KitsuneMagisk）で Root を導入:**
+   ```sh
+   mkdir -p /tmp/wsu && cd /tmp/wsu
+   curl -fsSLO https://github.com/AmanCode22/waydroidsu/releases/download/v2.0.0/wsu-2.0.0-x86_64-linux.tar.gz
+   tar -xzf wsu-2.0.0-x86_64-linux.tar.gz
+   waydroid session stop
+   sudo ./wsu install
+   sudo systemctl restart waydroid-container
+   waydroid show-full-ui &
+   # ホーム画面が表示されたら実行:
+   sudo /tmp/wsu/wsu setup
+   ```
+   Waydroid 内で **KitsuneMagisk** を開き（アップグレード確認が出たら **OK**）、**Settings → Superuser → Automatic Response → Grant** を設定します。
+4. **手順 4 — ネットワークと DNS の修正（UFW / Docker / Tailscale 利用時）:** `waydroid0` のポート 53/67 と転送を許可し、DNS タイムアウト時は `sudo tailscale set --accept-dns=false` または `/etc/resolv.conf` 先頭に `nameserver 8.8.8.8` を追加します。
+5. **手順 5 — Google Play ストアと Google One の準備:** 未認定表示が出た場合は `https://www.google.com/android/uncertified/` で Android ID を登録して再起動し、**Google Play Store** にログインして `x86_64` 版 **Google One** をインストールします（`libhoudini` 不要）。支払い方法追加画面が暗転する場合は、デスクトップのブラウザから `https://play.google.com/store/paymentmethods` で登録してください。
+6. **手順 6 — ADB 接続と Root 確認:**
+   ```sh
+   IP=$(waydroid status | awk '/IP address:/ {print $3}')
+   adb connect "${IP}:5555"
+   adb devices
+   adb shell "su -c id"
+   ```
+   `adb devices` に `device` が **1 台のみ**表示され、`su -c id` が `uid=0(root)` を返すことを確認します。
+7. **手順 7 — ツールキットの実行（まず読み取り専用で確認）:**
+   ```sh
+   cd google-ai
+   sh run-linux.sh --check
+   sh run-linux.sh --list
+   sh run-linux.sh
+   ```
+   詳しいトラブル対処は [docs/LINUX.md](docs/LINUX.md) を参照してください。
 
 
 ## 3. ダッシュボードの使い方

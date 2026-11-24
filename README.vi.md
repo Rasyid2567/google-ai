@@ -1,6 +1,6 @@
 # ePlus AI Toolkit — Tiếng Việt
 
-<!-- Source README.md git-blob: 00970df832b386d5507a536a7348ded599d43c54 -->
+<!-- Source README.md git-blob: 623bb35efcdfdcf87b36e72bc21046d035e0a491 -->
 
 [English](README.md) · **Tiếng Việt** · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md)
 
@@ -129,6 +129,52 @@ Dùng phiên bản có tệp `run-linux.sh`. Tập lệnh mở giao diện và c
 **Android 16 trở lên:** Tập lệnh Linux dừng trước khi thiết lập thiết bị vì Frida 16.5.9 chưa hỗ trợ Android 16. Bạn vẫn có thể kiểm tra USB bằng **Diagnose Android connection**.
 
 **Các bước 2–5 có thể phát sinh khoản thanh toán thật trên Google Play.** Mỗi bước cần xác nhận riêng, tài khoản Play đang dùng đã được xác minh, và kết quả mới chứa đúng ưu đãi có kỳ đầu giá 0. Trước khi tiếp tục chuỗi, hãy xác minh gói thuê bao và ngày gia hạn trong Google Play. Luồng thanh toán trên Linux được kiểm thử bằng mô phỏng. Kiểm tra trọn quy trình trên thiết bị thật vẫn chưa hoàn tất. [Cài đặt Linux, xử lý lỗi USB và kiểm tra](docs/LINUX.md).
+
+### Waydroid + Root trên Linux (Hướng dẫn riêng của fork — `Rasyid2567/google-ai`)
+
+> [!NOTE]
+> **Bổ sung riêng của fork (không có ở bản gốc `hoangsvit/google-ai`).** Vì MuMuPlayer không hỗ trợ Linux và nhiều điện thoại Android bị khóa bootloader, fork cá nhân này bổ sung hướng dẫn từng bước cài **Waydroid + Root (`waydroidsu` / KitsuneMagisk)** cùng hai bản vá tương thích Waydroid trong `ultra0.py` (ưu tiên `su -c id` trước `adb root` và dự phòng `am start` khi `monkey` lỗi `SYS_KEYS has no physical keys`). **Chỉ mới kiểm chứng Steps 0–1 trên Waydroid (Android 13, `x86_64`); Steps 2–5 vẫn là thao tác thanh toán thật và cần bạn tự xác nhận trong Google Play.**
+
+Thực hiện lần lượt các bước sau:
+
+1. **Bước 1 — Kiểm tra điều kiện Linux:** phiên **Wayland**, nhân Linux hỗ trợ `binder` (`grep binder /proc/filesystems`), đã cài `waydroid`, `adb`, `git`, `curl`, `python3` **3.10+**.
+2. **Bước 2 — Khởi tạo Waydroid với bản GAPPS:**
+   ```sh
+   sudo waydroid init -s GAPPS -f
+   sudo chmod 755 /var/lib/waydroid
+   sudo chmod 644 /var/lib/waydroid/waydroid.cfg
+   ```
+3. **Bước 3 — Cài Root bằng `waydroidsu` (`wsu` v2.0.0 / KitsuneMagisk):**
+   ```sh
+   mkdir -p /tmp/wsu && cd /tmp/wsu
+   curl -fsSLO https://github.com/AmanCode22/waydroidsu/releases/download/v2.0.0/wsu-2.0.0-x86_64-linux.tar.gz
+   tar -xzf wsu-2.0.0-x86_64-linux.tar.gz
+   waydroid session stop
+   sudo ./wsu install
+   sudo systemctl restart waydroid-container
+   waydroid show-full-ui &
+   # Khi Waydroid vào màn hình chính:
+   sudo /tmp/wsu/wsu setup
+   ```
+   Mở **KitsuneMagisk** trong Waydroid (bấm **OK** nếu được hỏi nâng cấp) → **Settings → Superuser → Automatic Response → Grant**.
+4. **Bước 4 — Khắc phục mạng & DNS (nếu dùng UFW, Docker hoặc Tailscale):** mở cổng 53/67 và forwarding cho `waydroid0`, đồng thời đặt `nameserver 8.8.8.8` / tắt `tailscale set --accept-dns=false` nếu DNS bị quá thời gian.
+5. **Bước 5 — Chuẩn bị Google Play Store & Google One:** đăng ký Google Device ID tại `https://www.google.com/android/uncertified/` nếu báo chưa chứng nhận, đăng nhập **Google Play Store** và cài **Google One** (bản `x86_64`, không cần `libhoudini`). Nếu hộp thoại thêm phương thức thanh toán bị tối, hãy thêm trực tiếp trên trình duyệt tại `https://play.google.com/store/paymentmethods`.
+6. **Bước 6 — Kết nối ADB & kiểm tra root:**
+   ```sh
+   IP=$(waydroid status | awk '/IP address:/ {print $3}')
+   adb connect "${IP}:5555"
+   adb devices
+   adb shell "su -c id"
+   ```
+   Đảm bảo `adb devices` chỉ hiện **1** thiết bị ở trạng thái `device` và `su -c id` trả về `uid=0(root)`.
+7. **Bước 7 — Chạy công cụ (kiểm tra chỉ đọc trước):**
+   ```sh
+   cd google-ai
+   sh run-linux.sh --check
+   sh run-linux.sh --list
+   sh run-linux.sh
+   ```
+   Xem chi tiết xử lý lỗi Waydroid tại [docs/LINUX.md](docs/LINUX.md).
 
 
 ## 3. Sử dụng giao diện

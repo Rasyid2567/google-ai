@@ -207,6 +207,13 @@ def ensure_root():
 
     uid = _id()
     if "uid=0" not in uid:
+        # Prefer su before adb root so TCP/Magisk devices (e.g. Waydroid)
+        # do not restart adbd and briefly drop offline.
+        try:
+            uid = sh("shell", "su -c id", timeout=15)
+        except Exception:
+            uid = ""
+    if "uid=0" not in uid:
         # Some emulators support adb root without needing su.
         try:
             sh("root", timeout=20)
@@ -216,11 +223,6 @@ def ensure_root():
                 note("Successfully enabled adb root")
         except Exception:
             pass
-    if "uid=0" not in uid:
-        try:
-            uid = sh("shell", "su -c id", timeout=15)
-        except Exception:
-            uid = ""
     if "uid=0" not in uid:
         sys.exit("❌ Root is unavailable. Enable root in MuMu settings and restart, or run adb root manually.")
 
@@ -399,12 +401,19 @@ def ensure_vending(*, retry_startup: bool = False) -> bool:
             if not retry_startup:
                 raise
             warn("Google Play Store launch command timed out; checking whether it started.")
+        fallback_tried = False
         for _ in range(20):
             time.sleep(1)
             if sh("shell", f"pidof {VENDING}"):
                 ok("Google Play Store started")
                 time.sleep(2)
                 return True
+            if not fallback_tried:
+                fallback_tried = True
+                component = sh("shell", f"cmd package resolve-activity --brief {VENDING}", timeout=15).splitlines()
+                target = component[-1].strip() if component else ""
+                if "/" in target:
+                    sh("shell", f"am start -n {target}", timeout=20)
     warn("Google Play Store did not start. Open it manually or restart the emulator.")
     return False
 
@@ -738,11 +747,18 @@ def launch_app() -> int:
     if "No activities found" in launch_output:
         warn("Google One has no launchable activity on this Android instance.")
         return 0
+    fallback_tried = False
     for seconds in (7, 3, 3, 3):
         time.sleep(seconds)
         pid = sh("shell", f"pidof {PKG}").strip()
         if pid.isdigit():
             return int(pid)
+        if not fallback_tried:
+            fallback_tried = True
+            component = sh("shell", f"cmd package resolve-activity --brief {PKG}", timeout=15).splitlines()
+            target = component[-1].strip() if component else ""
+            if "/" in target:
+                sh("shell", f"am start -n {target}", timeout=20)
     warn("Google One stopped or did not launch after 16 seconds. Open it manually in MuMu.")
     warn(f"Diagnostics: adb shell pm path {PKG} ; adb shell monkey -p {PKG} -c android.intent.category.LAUNCHER 1")
     return 0

@@ -51,3 +51,56 @@ The launcher installs pinned Textual and Frida 16.5.9 into a local `.venv`. It o
 ## Validation status
 
 Offline tests cover the launcher and dashboard with Python 3.11 and 3.13, including mocked checkout paths. End-to-end Steps 0–1 on a rooted USB phone remain pending. A live checkout is a separate release gate.
+
+## Waydroid + Root setup (Fork Guide — `Rasyid2567/google-ai`)
+
+> [!NOTE]
+> **Fork-specific addition (not from upstream `hoangsvit/google-ai`).** Steps 0–1 were verified on Arch Linux (`x86_64`, Wayland, kernel with `CONFIG_ANDROID_BINDER_IPC_RUST=y`) running Waydroid Android 13 (SDK 33, `x86_64`) with `waydroidsu` (`wsu` v2.0.0 / KitsuneMagisk). **Steps 2–5 can initiate real Google Play charges and remain unverified on Waydroid.**
+
+### Step-by-step setup
+
+1. **Initialize Waydroid with GAPPS**
+   ```sh
+   sudo waydroid init -s GAPPS -f
+   sudo chmod 755 /var/lib/waydroid
+   sudo chmod 644 /var/lib/waydroid/waydroid.cfg
+   ```
+2. **Install Root with `waydroidsu` (`wsu` v2.0.0)**
+   ```sh
+   mkdir -p /tmp/wsu && cd /tmp/wsu
+   curl -fsSLO https://github.com/AmanCode22/waydroidsu/releases/download/v2.0.0/wsu-2.0.0-x86_64-linux.tar.gz
+   tar -xzf wsu-2.0.0-x86_64-linux.tar.gz
+   waydroid session stop
+   sudo ./wsu install
+   sudo systemctl restart waydroid-container
+   waydroid show-full-ui &
+   # Once Android boots to the home screen:
+   sudo /tmp/wsu/wsu setup
+   ```
+   Open **KitsuneMagisk** inside Waydroid (tap **OK** if prompted to upgrade to the full manager), then set **Settings → Superuser → Automatic Response → Grant**.
+3. **Connect ADB and verify root**
+   ```sh
+   IP=$(waydroid status | awk '/IP address:/ {print $3}')
+   adb connect "${IP}:5555"
+   adb devices
+   adb shell "su -c id"
+   ```
+   Expect **one** `device` entry and `uid=0(root)`.
+4. **Install Google One & run read-only checks**
+   Sign in to **Google Play Store** and install **Google One** (native `x86_64`; `libhoudini` is not required). Then run:
+   ```sh
+   sh run-linux.sh --check
+   sh run-linux.sh --list
+   sh run-linux.sh
+   ```
+
+### Waydroid troubleshooting
+
+| Symptom | Fix |
+| --- | --- |
+| `waydroid status` says not initialized after `sudo waydroid init` | Check `/var/lib/waydroid` permissions (`sudo chmod 755 /var/lib/waydroid && sudo chmod 644 /var/lib/waydroid/waydroid.cfg`). |
+| No internet inside Waydroid (UFW / Docker active) | Allow `waydroid0` ports 53/67 and forwarding (`sudo ufw allow in on waydroid0 to any port 53`, port 67, `ufw route allow in/out on waydroid0`, and `iptables -I FORWARD -i/-o waydroid0 -j ACCEPT`). |
+| `ping 8.8.8.8` works, `ping google.com` fails (Tailscale DNS) | Disable Tailscale DNS overwrite (`sudo tailscale set --accept-dns=false`) or put `nameserver 8.8.8.8` at the top of `/etc/resolv.conf`. |
+| Waydroid window does not reopen after closing (`FROZEN`) | Wake the display (`adb shell input keyevent KEYCODE_WAKEUP && waydroid show-full-ui &`) or restart the session (`waydroid session stop && waydroid show-full-ui &`). |
+| Play Store *Add payment method* dims/freezes | Add the payment method from a desktop browser at `https://play.google.com/store/paymentmethods` on the same Google account. |
+| After host reboot | Start Waydroid (`waydroid show-full-ui &`) and reconnect ADB (`adb connect "$(waydroid status | awk '/IP address:/ {print $3}'):5555"`). |

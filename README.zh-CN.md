@@ -1,6 +1,6 @@
 # ePlus AI Toolkit — 简体中文
 
-<!-- Source README.md git-blob: 00970df832b386d5507a536a7348ded599d43c54 -->
+<!-- Source README.md git-blob: 623bb35efcdfdcf87b36e72bc21046d035e0a491 -->
 
 [English](README.md) · [Tiếng Việt](README.vi.md) · **简体中文** · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md)
 
@@ -127,6 +127,52 @@ sh run-linux.sh
 **Android 16 及更高版本：** 固定使用的 Frida 16.5.9 尚不支持 Android 16，因此 Linux 启动脚本会在配置设备前停止。仍可通过 **Diagnose Android connection** 检查 USB 连接。
 
 **第 2–5 步可能产生真实的 Google Play 费用。** 每一步都须单独确认、核实当前 Play 账号，并通过本次查询确认优惠完全匹配且首期价格为零。继续引导流程前，请在 Google Play 中核实订阅和续订日期。Linux 结账仅通过模拟测试，真机端到端验证尚未完成。 [Linux 安装、USB 故障排查和验证](docs/LINUX.md).
+
+### Linux 上的 Waydroid + Root（分支专属指南 — `Rasyid2567/google-ai`）
+
+> [!NOTE]
+> **分支专属补充（非上游 `hoangsvit/google-ai` 内容）。** 由于 MuMuPlayer 不支持 Linux 且部分实体手机无法解锁 Root，本个人分支补充了完整的 **Waydroid + Root（`waydroidsu` / KitsuneMagisk）** 顺序指南，以及 `ultra0.py` 中的两处 Waydroid 兼容修复（优先 `su -c id` 再调用 `adb root`，以及 `monkey` 失败时自动回退到 `am start`）。**仅在 Waydroid（Android 13，`x86_64`）上验证了第 0–1 步；第 2–5 步仍可能产生真实扣款，须由您自行确认并在 Google Play 中核实。**
+
+按顺序执行以下步骤：
+
+1. **第 1 步 — 检查 Linux 环境：** **Wayland** 会话、内核支持 Android `binder`（`grep binder /proc/filesystems`），并已安装 `waydroid`、`adb`、`git`、`curl`、`python3` **3.10+**。
+2. **第 2 步 — 使用 GAPPS 镜像初始化 Waydroid：**
+   ```sh
+   sudo waydroid init -s GAPPS -f
+   sudo chmod 755 /var/lib/waydroid
+   sudo chmod 644 /var/lib/waydroid/waydroid.cfg
+   ```
+3. **第 3 步 — 使用 `waydroidsu`（`wsu` v2.0.0 / KitsuneMagisk）安装 Root：**
+   ```sh
+   mkdir -p /tmp/wsu && cd /tmp/wsu
+   curl -fsSLO https://github.com/AmanCode22/waydroidsu/releases/download/v2.0.0/wsu-2.0.0-x86_64-linux.tar.gz
+   tar -xzf wsu-2.0.0-x86_64-linux.tar.gz
+   waydroid session stop
+   sudo ./wsu install
+   sudo systemctl restart waydroid-container
+   waydroid show-full-ui &
+   # 等待 Waydroid 进入主屏幕后执行：
+   sudo /tmp/wsu/wsu setup
+   ```
+   在 Waydroid 中打开 **KitsuneMagisk**（如提示升级请点 **OK**）→ **Settings → Superuser → Automatic Response → Grant**。
+4. **第 4 步 — 修复网络与 DNS（若启用了 UFW、Docker 或 Tailscale）：** 放行 `waydroid0` 的 53/67 端口与转发规则；若 DNS 超时（例如 Tailscale `100.100.100.100`），可关闭 `tailscale set --accept-dns=false` 或在 `/etc/resolv.conf` 顶部添加 `nameserver 8.8.8.8`。
+5. **第 5 步 — 配置 Google Play 商店与 Google One：** 若提示未认证，请前往 `https://www.google.com/android/uncertified/` 注册 Android ID 后重启 Waydroid；登录 **Google Play Store** 并安装原生 `x86_64` 版 **Google One**（无需 `libhoudini`）。若添加付款方式弹窗变暗卡住，可在桌面浏览器访问 `https://play.google.com/store/paymentmethods` 添加。
+6. **第 6 步 — 连接 ADB 并验证 Root：**
+   ```sh
+   IP=$(waydroid status | awk '/IP address:/ {print $3}')
+   adb connect "${IP}:5555"
+   adb devices
+   adb shell "su -c id"
+   ```
+   确认 `adb devices` 仅显示 **1** 台 `device`，且 `su -c id` 返回 `uid=0(root)`。
+7. **第 7 步 — 运行工具（先执行只读检查）：**
+   ```sh
+   cd google-ai
+   sh run-linux.sh --check
+   sh run-linux.sh --list
+   sh run-linux.sh
+   ```
+   完整排错见 [docs/LINUX.md](docs/LINUX.md)。
 
 
 ## 3. Textual 界面

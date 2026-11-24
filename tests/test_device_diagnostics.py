@@ -114,6 +114,38 @@ class DeviceDiagnosticsTests(unittest.TestCase):
             self.assertEqual(mod.launch_app(), 1234)
             self.assertEqual(pause.call_count, 2)
 
+    def test_ensure_root_prefers_su_before_adb_root(self):
+        calls = []
+        def shell(*args, **kwargs):
+            calls.append(args)
+            if args == ("shell", "id"):
+                return "uid=2000(shell)"
+            if args == ("shell", "su -c id"):
+                return "uid=0(root)"
+            return ""
+        with patch.object(mod, "sh", side_effect=shell):
+            mod.ensure_root()
+        self.assertIn(("shell", "su -c id"), calls)
+        self.assertNotIn(("root",), calls)
+
+    def test_launch_app_falls_back_to_am_start_when_monkey_fails(self):
+        calls = []
+        pid_checks = {"n": 0}
+        def shell(*args, **kwargs):
+            calls.append(args)
+            cmd = " ".join(args)
+            if "pm path" in cmd:
+                return "package:/data/app/base.apk"
+            if "resolve-activity" in cmd:
+                return f"priority=0\n{mod.PKG}/.LauncherActivity"
+            if "pidof" in cmd:
+                pid_checks["n"] += 1
+                return "" if pid_checks["n"] == 1 else "5678"
+            return ""
+        with patch.object(mod, "sh", side_effect=shell), patch.object(mod.time, "sleep"):
+            self.assertEqual(mod.launch_app(), 5678)
+        self.assertTrue(any("am start -n " + mod.PKG + "/.LauncherActivity" in " ".join(c) for c in calls))
+
 
 if __name__ == "__main__":
     unittest.main()
