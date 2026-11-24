@@ -911,7 +911,8 @@ class GoogleAITUI(App[None]):
             return
         nodes = self.query(f"#stage_{step}")
         if len(nodes):
-            if step >= 5 and not self._extra_offers[step - 5].legacy_checkout_supported:
+            if (5 <= step < 5 + len(self._extra_offers)
+                    and not self._extra_offers[step - 5].legacy_checkout_supported):
                 marker = "ⓘ"  # ProductDetails only; checkout is not implemented.
             nodes.first().update(f"{marker}  {label}")
 
