@@ -37,6 +37,8 @@ from device_diagnostics import ConnectionDiagnosis, ConnectionStatus, inspect_co
 from stage_history import latest_history, read_history, record_history, read_offer_history, record_offer_scan
 from stage_history import latest_offer_history
 
+RESEARCH_SKUS = ("g1.2tb.ai.subs_variant", "g1.play.20tb", "g1.play.ai.pro", "g1.30tb")
+
 
 class OfferRow(Horizontal):
     def __init__(self, offer: dict, *, current: bool, ran: bool, enabled: bool,
@@ -386,6 +388,7 @@ class GoogleAITUI(App[None]):
     }
     #elapsed, #activity { color: #95c4dd; }
     #offer_history { height: auto; }
+    #sku_coverage { display: none; height: auto; color: #afcce3; margin: 0 1 1 1; }
     #sku_details { display: none; height: auto; margin: 0; }
     .offer-row { height: auto; min-height: 3; background: #12263d; margin-bottom: 1; }
     .offer-row Static { width: 1fr; height: auto; padding: 0 1; }
@@ -596,6 +599,7 @@ class GoogleAITUI(App[None]):
                         yield Static("Review Google Play pricing and renewal terms "
                                      "before each checkout.", id="hint")
                     if self.offer_dashboard:
+                        yield Static("", id="sku_coverage", markup=False)
                         with Vertical(id="offer_history"):
                             yield Static("Offers will appear here after the scan.")
                         with Collapsible(title="SKU details and price phases", id="sku_details"):
@@ -1191,11 +1195,9 @@ class GoogleAITUI(App[None]):
 
         No catalogue enumeration, no account switching or checkout; fail closed.
         """
-        checked = ("g1.2tb.ai.subs_variant", "g1.play.20tb",
-                   "g1.play.ai.pro", "g1.30tb")
         command = [sys.executable, str(self.repo / "sku_check_runner.py"),
                    "--serial", device]
-        for sku in checked:
+        for sku in RESEARCH_SKUS:
             command.extend(["--sku", sku])
         result: dict = {"status": "query_error"}
         try:
@@ -1279,6 +1281,23 @@ class GoogleAITUI(App[None]):
                                  and not self._diagnosing and account == self._offer_ready_account,
                                  verified_scan=self._offer_check_ready))
         container = self.screen_stack[0].query_one("#offer_history", Vertical)
+        coverage = self.screen_stack[0].query_one("#sku_coverage", Static)
+        report = self._sku_report or {}
+        products = {item["product"] for item in current_rows}
+        products.update(item["product"] for item in observed_offers(saved_records))
+        labels = []
+        for key, label in (("missing_skus", "Not returned"), ("no_offer_skus", "No offers returned")):
+            values = report.get(key)
+            if isinstance(values, list):
+                matching = [sku for sku in RESEARCH_SKUS if sku in values]
+                if matching:
+                    labels.append(f"{label} · {', '.join(matching)}")
+        if not report and saved_records:
+            absent = [sku for sku in RESEARCH_SKUS if sku not in products]
+            if absent:
+                labels.append(f"No saved result · {', '.join(absent)}")
+        coverage.update("\n".join(labels))
+        coverage.display = bool(labels)
         await container.remove_children()
         if rows:
             await container.mount(*rows)

@@ -94,13 +94,16 @@ class OfferDashboardTests(unittest.IsolatedAsyncioTestCase):
                                 "sku": "g1.30tb", "base_plan_id": "monthly", "offer_id": "example",
                                 "phases": [{"price_amount_micros": "0", "currency": "USD", "billing_period": "P1M"}],
                             }
-                            app._known_skus_finished({"status": "observed", "items": [sku]},
+                            app._known_skus_finished({"status": "observed", "items": [sku],
+                                                      "missing_skus": ["g1.play.20tb"]},
                                                      "test-device", account, app._extra_scan_generation)
                             await pilot.pause()
                             extra = next(row for row in app.query(OfferRow) if "g1.30tb" in row.description)
                             self.assertIn("Listing only", extra.description)
                             self.assertFalse(list(extra.query(Button)))
                             self.assertTrue(app.query_one("#sku_details").display)
+                            self.assertIn("Not returned · g1.play.20tb",
+                                          str(app.query_one("#sku_coverage").render()))
                             self.assertEqual(len(read_offer_history(repo, account)), 3)
             reopened = GoogleAITUI(repo=repo, offer_dashboard=True)
             with (patch.object(reopened, "run_stage") as worker,
@@ -119,6 +122,7 @@ class OfferDashboardTests(unittest.IsolatedAsyncioTestCase):
                     self.assertTrue(all(button.disabled for button in reopened.query(".offer-run")))
                     self.assertTrue(all("Scan required" in row.description for row in rows if row.step is not None))
                     self.assertTrue(any("Listing only" in row.description for row in rows))
+                    self.assertIn("No saved result", str(reopened.query_one("#sku_coverage").render()))
                     reopened.query_one("#quickstart", Button).press()
                     await pilot.pause()
                     worker.assert_called_once_with(1)
