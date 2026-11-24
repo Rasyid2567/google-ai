@@ -39,16 +39,36 @@ from stage_history import latest_offer_history
 
 
 class OfferRow(Horizontal):
-    def __init__(self, offer: dict, *, current: bool, ran: bool, enabled: bool) -> None:
+    def __init__(self, offer: dict, *, current: bool, ran: bool, enabled: bool,
+                 verified_scan: bool) -> None:
         super().__init__(classes="offer-row")
         self.step = offer_step(offer)
-        name = STAGES[self.step].label if self.step is not None else f"{offer['product']} / {offer['id']}"
+        product = "Google AI Pro" if offer["product"] == "g1.2tb.ai.subs_variant" else offer["product"]
+        offer_id = offer["id"]
+        if self.step is not None:
+            name = STAGES[self.step].label
+        elif offer_id in ("null", "(unavailable)"):
+            name = product
+        else:
+            name = f"{product} / {offer_id}"
         source = "Latest scan" if current else "Earlier scan"
-        attempt = "Run recorded · Outcome unverified" if ran else "Not run"
-        period = offer["period"]
+        if self.step is None:
+            attempt = "Listing only"
+        elif ran:
+            attempt = "Run recorded (outcome unverified)"
+        else:
+            attempt = "Not run"
+        period = {"P1Y": "12 months", "P6M": "6 months", "P1M": "Monthly"}.get(offer["period"], "")
         micros = offer["micros"]
         phase = "Zero first phase" if micros == "0" else "Nonzero first phase" if micros else "Price unknown"
-        self.description = f"{name} · {period}\n{source} · {phase} · {attempt}"
+        title = f"{name} · {period}" if period and self.step is None else name
+        details = [source, phase, attempt]
+        if self.step is not None and not enabled:
+            if micros != "0":
+                details.append("Requires a zero-price first phase")
+            else:
+                details.append("Absent from latest scan" if verified_scan and not current else "Scan required")
+        self.description = title + "\n" + " · ".join(details)
         self.ran = ran
         self.enabled = enabled
 
@@ -559,7 +579,7 @@ class GoogleAITUI(App[None]):
                         if self.offer_dashboard:
                             with Horizontal(id="offer_toolbar"):
                                 yield Static("Offer History", id="welcome")
-                                yield Button("Check Device & Offers", id="quickstart", variant="success")
+                                yield Button("Check Device & Offers", id="quickstart", variant="primary")
                                 yield Button("Stop check", id="stop", disabled=True)
                         yield Static("LIVE STATUS", classes="section")
                         yield Static("Waiting for your action.", id="activity")
@@ -782,8 +802,10 @@ class GoogleAITUI(App[None]):
                 self.call_after_refresh(self.quickstart_pressed)
             else:
                 self.query_one("#quickstart", Button).label = "Scan again"
-                self._set_status("Saved offer history loaded")
-                self._set_message("Scan again to verify the current device, account and offers before running one.")
+                self.query_one("#activity", Static).display = False
+                self.query_one("#elapsed", Static).display = False
+                self._set_status("Viewing saved offers")
+                self._set_message("Select Scan again to verify which offers can run.")
                 self.call_later(self._render_offer_history)
 
     def _invalidate_connection_polls(self) -> None:
@@ -1237,7 +1259,8 @@ class GoogleAITUI(App[None]):
             rows.append(OfferRow(item, current=fresh, ran=offer_step(item) in ran,
                                  enabled=fresh and runnable_offer_step(item) is not None
                                  and self._offer_check_ready and not self.busy
-                                 and not self._diagnosing and account == self._offer_ready_account))
+                                 and not self._diagnosing and account == self._offer_ready_account,
+                                 verified_scan=self._offer_check_ready))
         container = self.screen_stack[0].query_one("#offer_history", Vertical)
         await container.remove_children()
         if rows:
@@ -1508,6 +1531,9 @@ class GoogleAITUI(App[None]):
         self._started_at = time.monotonic()
         self._last_activity_at = self._started_at
         self.query_one("#elapsed", Static).update("Elapsed: 00:00")
+        if self.offer_dashboard:
+            self.query_one("#activity", Static).display = True
+            self.query_one("#elapsed", Static).display = True
         self.query_one("#status_panel").scroll_home(animate=False)
         self.query_one("#activity", Static).update(
             "Connecting to Android diagnostics..." if self.native_mode
