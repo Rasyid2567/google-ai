@@ -5,6 +5,7 @@ This module never starts checkout. Unknown offers are INSPECT-ONLY.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from decimal import Decimal
 import re
 
 _PRO = "g1.2tb.ai.subs_variant"
@@ -35,7 +36,12 @@ class ExtraOffer:
 
 
 def _safe(value: object) -> str:
-    return value if isinstance(value, str) and _SAFE.fullmatch(value) else ""
+    """Treat API sentinel strings as missing IDs, never as named offers."""
+    if not isinstance(value, str) or not _SAFE.fullmatch(value):
+        return ""
+    if value.casefold() in {"null", "none", "undefined", "nan", "false"}:
+        return ""
+    return value
 
 
 def _micros(value: object) -> str:
@@ -76,8 +82,10 @@ def parse_sku_check(result: dict | None) -> list[ExtraOffer]:
         base = _safe(row.get("base_plan_id"))
         if not product or not base or (product == _PRO and offer_id in _FIXED_IDS):
             continue
+        # Google Play includes standard/base plans with no promotional offer ID.
+        # They belong in Step 1 SKU details, NOT in the actionable Step 5+ list.
         if not offer_id:
-            offer_id = "base-plan-" + base
+            continue
         phases = row.get("phases")
         first = phases[0] if isinstance(phases, list) and phases and isinstance(phases[0], dict) else {}
         entries.append(ExtraOffer(
@@ -92,7 +100,10 @@ def merge_extra_offers(*groups: list[ExtraOffer]) -> list[ExtraOffer]:
     by_key: dict[tuple[str, str], ExtraOffer] = {}
     for group in groups:
         for item in group:
-            if not isinstance(item, ExtraOffer):
+            if (not isinstance(item, ExtraOffer)
+                    or not _safe(item.product) or not _safe(item.offer_id)
+                    or item.offer_id.startswith("base-plan-")
+                    or (item.product == _PRO and item.offer_id in _FIXED_IDS)):
                 continue
             key = (item.product, item.offer_id)
             existing = by_key.get(key)
@@ -104,20 +115,39 @@ def merge_extra_offers(*groups: list[ExtraOffer]) -> list[ExtraOffer]:
 
 
 def offer_step_label(step: int, offer: ExtraOffer) -> str:
-    """Compact label safe for narrow TUI sidebar."""
+    """Keep sidebar rows legible in a 26-column Textual controls pane.
+
+    Full SKU and offer IDs remain available in the Step 1 catalogue and the
+    selected offer's details; never truncate identifiers in those views.
+    """
     if offer.legacy_checkout_supported:
-        return f"{step}. Optional +6 months"
-    kind = "Ultra" if ("20tb" in offer.product or "30tb" in offer.product) else "Offer"
-    return f"{step}. {kind}: {offer.offer_id[:17]} (view)"
+        return f"{step}. +6mo optional"
+    product = offer.product.lower()
+    if "30tb" in product:
+        group = "30TB"
+    elif "20tb" in product:
+        group = "20TB"
+    elif "ai.pro" in product or "2tb.ai" in product:
+        group = "AI Pro"
+    else:
+        group = "SKU"
+    prefix = f"{step}. {group} "
+    room = max(1, 19 - len(prefix))
+    return prefix + offer.offer_id[:room]
 
 
 def offer_details(offer: ExtraOffer) -> str:
+    price = "Unknown"
+    if offer.price_micros.isdecimal():
+        price = f"{Decimal(offer.price_micros) / Decimal(1_000_000):,.2f}"
+        price += f" {offer.currency}" if offer.currency else " (currency not returned)"
     lines = [
-        f"Product: {offer.product}", f"Offer: {offer.offer_id}",
+        f"Product SKU: {offer.product}",
+        f"Offer ID: {offer.offer_id}",
         f"Base plan: {offer.base_plan or 'Not returned'}",
-        f"First phase: {offer.price_micros or 'Unknown'} micros / {offer.period or 'Unknown'}",
-        f"Currency: {offer.currency or 'Not returned by Step 1'}",
+        f"First pricing phase: {price} / {offer.period or 'unknown billing period'}",
+        "Later renewal price: NOT VERIFIED",
         "Eligibility: NOT VERIFIED",
-        "Newly discovered offers are metadata only; no automatic checkout.",
+        "This observation does not authorize checkout or change subscriptions.",
     ]
     return "\n".join(lines)
