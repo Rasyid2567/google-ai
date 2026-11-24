@@ -10,6 +10,8 @@ On startup, the default dashboard shows saved offer history. It runs **Step 1** 
 
 The step selection and guided-sequence controls below apply when the dashboard is opened with an explicit step or sequence option. The default dashboard uses the individual offer buttons.
 
+On this research branch, a fresh verified Step 1 also scans the limited SKU shortlist. Newly discovered offers appear in **Offer History** as **Listing only**. Expand **SKU details and price phases** for the current scan's base plans, pricing phases and SKU results. Google Play eligibility remains unverified.
+
 ### Start with Check Device & Offers in the explicit step dashboard
 
 While idle, the dashboard checks existing ADB connections roughly every five seconds. If Android is not connected, it shows a dismissible notice and checks again; connecting does not by itself unlock paid steps. Monitoring pauses during stages and other dialogs. It only reads `adb devices` (which can start the local ADB server); it does not scan ports, connect devices, or install ADB in the background.

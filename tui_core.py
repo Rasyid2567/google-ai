@@ -481,12 +481,13 @@ def observed_offers(value: object) -> list[dict]:
         micros = str(offer.get("micros"))
         key = product, offer_id
         items[key] = {"product": product, "id": offer_id, "period": _offer_field(offer.get("period")),
-                      "micros": micros if re.fullmatch(r"[0-9]{1,18}", micros) else None}
+                      "micros": micros if re.fullmatch(r"[0-9]{1,18}", micros) else None,
+                      "inspect_only": offer.get("inspect_only") is True}
     return list(items.values())
 
 
 def offer_step(offer: dict) -> int | None:
-    if offer["product"] != "g1.2tb.ai.subs_variant":
+    if offer.get("inspect_only") or offer["product"] != "g1.2tb.ai.subs_variant":
         return None
     return {"12months-eft": 2, "6months-eft": 3, "6months-eft-2": 4,
             "6months-eft-ss-2026": 5}.get(offer["id"])

@@ -80,6 +80,18 @@ class OfferDashboardTests(unittest.IsolatedAsyncioTestCase):
                             self.assertEqual(len(saved), 2)
                             self.assertTrue(next(item["ran"] for item in saved if item["id"] == initial["id"]))
                             self.assertEqual(read_offer_history(repo, "other@example.com"), [])
+                            sku = {
+                                "sku": "g1.30tb", "base_plan_id": "monthly", "offer_id": "example",
+                                "phases": [{"price_amount_micros": "0", "currency": "USD", "billing_period": "P1M"}],
+                            }
+                            app._known_skus_finished({"status": "observed", "items": [sku]},
+                                                     "test-device", account, app._extra_scan_generation)
+                            await pilot.pause()
+                            extra = next(row for row in app.query(OfferRow) if "g1.30tb" in row.description)
+                            self.assertIn("Listing only", extra.description)
+                            self.assertFalse(list(extra.query(Button)))
+                            self.assertTrue(app.query_one("#sku_details").display)
+                            self.assertEqual(len(read_offer_history(repo, account)), 3)
             reopened = GoogleAITUI(repo=repo, offer_dashboard=True)
             with (patch.object(reopened, "run_stage") as worker,
                   patch.object(reopened, "_inspect_connection_periodically") as poll):
@@ -92,10 +104,11 @@ class OfferDashboardTests(unittest.IsolatedAsyncioTestCase):
                     self.assertFalse(reopened.query_one("#activity").display)
                     self.assertFalse(reopened.query_one("#elapsed").display)
                     rows = list(reopened.query(OfferRow))
-                    self.assertEqual(len(rows), 2)
+                    self.assertEqual(len(rows), 3)
                     self.assertEqual(str(rows[0].query_one(Button).label), "Run again")
-                    self.assertTrue(all(row.query_one(Button).disabled for row in rows))
-                    self.assertTrue(all("Scan required" in row.description for row in rows))
+                    self.assertTrue(all(button.disabled for button in reopened.query(".offer-run")))
+                    self.assertTrue(all("Scan required" in row.description for row in rows if row.step is not None))
+                    self.assertTrue(any("Listing only" in row.description for row in rows))
                     reopened.query_one("#quickstart", Button).press()
                     await pilot.pause()
                     worker.assert_called_once_with(1)

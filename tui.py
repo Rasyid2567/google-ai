@@ -24,7 +24,7 @@ from textual import on, work
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
-from textual.widgets import Button, Footer, Header, Link, RichLog, Select, Static
+from textual.widgets import Button, Collapsible, Footer, Header, Link, RichLog, Select, Static
 
 from sku_check_core import render_result as render_sku_result
 from offer_discovery import (ExtraOffer, parse_step1, parse_sku_check,
@@ -386,6 +386,7 @@ class GoogleAITUI(App[None]):
     }
     #elapsed, #activity { color: #95c4dd; }
     #offer_history { height: auto; }
+    #sku_details { display: none; height: auto; margin: 0; }
     .offer-row { height: auto; min-height: 3; background: #12263d; margin-bottom: 1; }
     .offer-row Static { width: 1fr; height: auto; padding: 0 1; }
     .offer-row Button { width: 13; min-width: 13; height: 3; }
@@ -588,7 +589,8 @@ class GoogleAITUI(App[None]):
                         yield Static("Check the device and offers to begin.", id="message")
                         yield Static("", id="step_result")
                         yield Static("AVAILABLE OFFERS · SKU / OFFER / PRICE PHASES", id="offers_title")
-                        yield RichLog(id="offer_view", wrap=True, highlight=False, markup=False)
+                        if not self.offer_dashboard:
+                            yield RichLog(id="offer_view", wrap=True, highlight=False, markup=False)
                         yield Static("Elapsed: --", id="elapsed")
                         yield Button("Completed action on Android", id="manual", disabled=True)
                         yield Static("Review Google Play pricing and renewal terms "
@@ -596,6 +598,8 @@ class GoogleAITUI(App[None]):
                     if self.offer_dashboard:
                         with Vertical(id="offer_history"):
                             yield Static("Offers will appear here after the scan.")
+                        with Collapsible(title="SKU details and price phases", id="sku_details"):
+                            yield RichLog(id="offer_view", wrap=True, highlight=False, markup=False)
         if not self.offer_dashboard:
             yield Footer()
 
@@ -1175,7 +1179,10 @@ class GoogleAITUI(App[None]):
             for line in render_sku_result(self._sku_report).splitlines():
                 view.write(line)
         view.display = True
-        self.query_one("#offers_title", Static).display = True
+        if self.offer_dashboard:
+            self.query_one("#sku_details", Collapsible).display = True
+        else:
+            self.query_one("#offers_title", Static).display = True
 
     @work(thread=True, exclusive=True, group="step1-known-skus")
     def scan_known_skus(self, device: str, account: str,
@@ -1217,8 +1224,20 @@ class GoogleAITUI(App[None]):
         before = len(self._extra_offers)
         self._sku_report = result
         self._real_step1_run = False
-        self._update_discovered(parse_sku_check(result))
+        extras = parse_sku_check(result)
+        self._update_discovered(extras)
         self._render_offer_catalog()
+        if self.offer_dashboard:
+            current = {(item["product"], item["id"]) for item in self._current_offers}
+            additional = observed_offers([
+                {"product": item.product, "id": item.offer_id, "period": item.period,
+                 "micros": item.price_micros, "inspect_only": True}
+                for item in extras if (item.product, item.offer_id) not in current
+            ])
+            self._current_offers.extend(additional)
+            if additional:
+                self._save_offer_scan(additional)
+            self.call_later(self._render_offer_history)
         if len(self._extra_offers) > before:
             self.query_one("#activity", Static).update(
                 f"Step 1 observed {len(self._extra_offers)} additional offer(s) "
@@ -1236,6 +1255,7 @@ class GoogleAITUI(App[None]):
     def offer_pressed(self, event: Button.Pressed) -> None:
         row = event.button.parent
         if (isinstance(row, OfferRow) and not event.button.disabled and row.step is not None
+                and not self._real_step1_run
                 and self._catalog_account == self._offer_ready_account
                 and any(runnable_offer_step(item) == row.step for item in self._current_offers)):
             self._confirm_stage(row.step, False, retry=row.ran)
@@ -1258,7 +1278,7 @@ class GoogleAITUI(App[None]):
             fresh = key in current
             rows.append(OfferRow(item, current=fresh, ran=offer_step(item) in ran,
                                  enabled=fresh and runnable_offer_step(item) is not None
-                                 and self._offer_check_ready and not self.busy
+                                 and self._offer_check_ready and not self.busy and not self._real_step1_run
                                  and not self._diagnosing and account == self._offer_ready_account,
                                  verified_scan=self._offer_check_ready))
         container = self.screen_stack[0].query_one("#offer_history", Vertical)
@@ -1267,6 +1287,12 @@ class GoogleAITUI(App[None]):
             await container.mount(*rows)
         else:
             await container.mount(Static("No saved offers to display."))
+
+    def _save_offer_scan(self, offers: list[dict]) -> None:
+        try:
+            record_offer_scan(self.repo, self._catalog_account, offers)
+        except OSError:
+            self.notify("Could not save local offer history.", severity="warning")
 
     @on(Button.Pressed, "#refresh_offers")
     def refresh_offers_pressed(self) -> None:
@@ -1918,10 +1944,7 @@ class GoogleAITUI(App[None]):
                 if outcome.code == "listed":
                     self._restored_offers = None
                     self._catalog_account = self._offer_ready_account or ""
-                    try:
-                        record_offer_scan(self.repo, self._catalog_account, self._current_offers)
-                    except OSError:
-                        self.notify("Could not save local offer history.", severity="warning")
+                    self._save_offer_scan(self._current_offers)
             elif not self._offer_check_ready:
                 self._current_offers = []
             self.call_later(self._render_offer_history)
