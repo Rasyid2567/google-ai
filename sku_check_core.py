@@ -29,7 +29,9 @@ def validate_skus(values: list[str]) -> list[str]:
 
 
 def _id(value: object) -> str:
-    return value if isinstance(value, str) and ID_RE.fullmatch(value) else ""
+    if not isinstance(value, str) or not ID_RE.fullmatch(value):
+        return ""
+    return "" if value.casefold() in {"null", "none", "undefined", "nan"} else value
 
 
 def _price(value: object) -> str | None:
@@ -152,7 +154,12 @@ def render_result(result: dict) -> str:
                 if (not isinstance(currency, str) or not CURRENCY_RE.fullmatch(currency)
                         or not isinstance(period, str) or not PERIOD_RE.fullmatch(period)):
                     continue
-                lines.append(f"  Phase {index}: {amt:,.2f} {currency} / {period}")
+                period_hint = {
+                    "P1M": "1 month", "P3M": "3 months",
+                    "P6M": "6 months", "P1Y": "1 year",
+                }.get(period, "")
+                hint = f" ({period_hint})" if period_hint else ""
+                lines.append(f"  Phase {index}: {amt:,.2f} {currency} / {period}{hint}")
             except (KeyError, TypeError, ArithmeticError):
                 continue
     if status in messages:
