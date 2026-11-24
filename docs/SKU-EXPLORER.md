@@ -10,6 +10,7 @@ Step 1 includes **SKU inspection automatically**. There is only one action: **Ch
    - `g1.2tb.ai.subs_variant`
    - `g1.play.20tb`
    - `g1.play.ai.pro`
+   - `g1.ai.pro`
    - `g1.30tb`
 4. The existing **AVAILABLE OFFERS · SKU / OFFER / PRICE PHASES** panel displays the original offer list, plus each returned SKU, base plan, offer ID and ordered pricing phases. Products not returned are explicitly marked **Not returned**, *not* "ineligible". Failed SKU checks display a diagnostic message rather than inventing offers.
 5. Existing Steps **2, 3 and 4** remain unchanged. Any distinct additional offers actually observed in Step 1 appear dynamically as **Step 5, Step 6, Step 7…**, up to 12 extras. If there are none, Step 5+ is hidden.
@@ -21,6 +22,8 @@ The original Pro optional +6-month operation is only available as Step 5 when it
 Step 1's SKU check invokes `sku_check_runner.py` using a separate read-only Frida `queryProductDetailsAsync` script. It does **not** call `launchBillingFlow`, read a purchase token, switch accounts or automatically activate any plan. Finding a SKU, seeing a zero-priced phase, or seeing an offer ID **does not prove account eligibility, an active subscription, a free month or successful payment**. Verify terms and charges in Google Play before any optional checkout.
 
 The candidate SKUs are a **bounded, known shortlist**, not an exhaustive Google Play catalogue, and returned offers may vary by region, time and account. GitHub Actions cannot confirm the device integration without a real authorized emulator.
+
+The shortlist covers the five literal product IDs used in the engine's ProductDetails queries. Google One's public AI plan comparison also lists Plus (400 GB or 2 TB), Pro (5 TB), Ultra 5x (20 TB) and Ultra 20x (30 TB). The public comparison identifies plan families but supplies no product IDs for additional candidates. Example IDs in test fixtures and synthetic research data are not evidence of a product returned by Google Play.
 
 New scans clear stale extra steps and SKU results. When the selected account/device changes, the old offer catalog is cleared so it cannot be mistaken for the current account.
 

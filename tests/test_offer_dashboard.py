@@ -112,7 +112,7 @@ class OfferDashboardTests(unittest.IsolatedAsyncioTestCase):
                             self.assertFalse(list(extra.query(Button)))
                             self.assertFalse(list(app.query("#sku_details")))
                             self.assertIn(extra, list(app.query_one("#offer_history").query(OfferRow)))
-                            self.assertIn("Not returned · Google One 20 TB",
+                            self.assertIn("Not returned · Google AI Ultra 5x · 20 TB",
                                           str(app.query_one("#sku_coverage").render()))
                             self.assertEqual(len(read_offer_history(repo, account)), 3)
             reopened = GoogleAITUI(repo=repo, offer_dashboard=True)

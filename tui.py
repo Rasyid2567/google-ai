@@ -38,12 +38,13 @@ from device_diagnostics import ConnectionDiagnosis, ConnectionStatus, inspect_co
 from stage_history import latest_history, read_history, record_history, read_offer_history, record_offer_scan
 from stage_history import latest_offer_history
 
-RESEARCH_SKUS = ("g1.2tb.ai.subs_variant", "g1.play.20tb", "g1.play.ai.pro", "g1.30tb")
+RESEARCH_SKUS = ("g1.2tb.ai.subs_variant", "g1.play.20tb", "g1.play.ai.pro", "g1.ai.pro", "g1.30tb")
 SKU_LABELS = {
     "g1.2tb.ai.subs_variant": "Google AI Pro",
-    "g1.play.20tb": "Google One 20 TB",
+    "g1.play.20tb": "Google AI Ultra 5x · 20 TB",
     "g1.play.ai.pro": "Google AI Pro (Play)",
-    "g1.30tb": "Google One 30 TB",
+    "g1.ai.pro": "Google AI Pro (g1.ai.pro)",
+    "g1.30tb": "Google AI Ultra 20x · 30 TB",
 }
 
 
